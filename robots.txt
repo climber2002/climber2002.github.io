@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: 
+
+Sitemap: http://climber2002.github.io/sitemap.xml 
