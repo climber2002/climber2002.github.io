@@ -4,7 +4,7 @@
   <title><![CDATA[AprilTouch]]></title>
   <link href="http://climber2002.github.io/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2013-12-01T23:57:39+08:00</updated>
+  <updated>2013-12-02T00:06:49+08:00</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -12,5 +12,14 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[My First Post]]></title>
+    <link href="http://climber2002.github.io/blog/2013/12/01/my-first-post/"/>
+    <updated>2013-12-01T23:59:57+08:00</updated>
+    <id>http://climber2002.github.io/blog/2013/12/01/my-first-post</id>
+    <content type="html"><![CDATA[<p>My name is Andy Wang and this is my personal blog. I&rsquo;ll try to blog about my experience on Ruby and iOS programming. Hello world!</p>
+]]></content>
+  </entry>
   
 </feed>
