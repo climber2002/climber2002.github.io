@@ -1,0 +1,10 @@
+---
+layout: post
+title: "My first post"
+date: 2013-12-01 23:59:57 +0800
+comments: true
+author: Andy Wang
+categories: 
+---
+
+My name is Andy Wang and this is my personal blog. I'll try to blog about my experience on Ruby and iOS programming. Hello world! 
