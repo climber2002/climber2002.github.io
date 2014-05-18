@@ -54,6 +54,8 @@ After the database is created, we need to enable the PostGIS extension by runnin
 rake db:gis:setup
 ```
 
+<!-- more -->
+
 Get the shape files
 ------------------
 In this application I need to import some data from shape files to the database. The shapefile is a flat file format for geospatial data originally developed by ESRI for storing sets of geographic features. It supports certain vector shapes-- points, lines, and polygons-- along with associated attributes. Although shapefile began as a proprietary format, the format specification is readily available, and it is now a de facto standard for large datasets. A shapefile actually consists of three (and sometimes more) related files, each with the same base filename but different extensions. The main file has the extension ".shp" and contains the geometric data itself in a binary format. An auxiliary ".shx" file provides a simple flat index allowing random access into the shapefile. A second auxiliary ".dbf" file provides the attribute data in dBASE format. All shapefiles should have those three core files, although some shapefiles may include additional files containing coordinate system, spatial index, or other related information.
