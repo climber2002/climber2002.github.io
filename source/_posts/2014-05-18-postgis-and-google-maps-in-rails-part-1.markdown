@@ -206,7 +206,7 @@ insert into countries(name, iso_code, geom)
 
  After bundle install, we can open the rails console (I have installed pry-rails to use pry instead of irb), 
 
- ```
+{% codeblock lang:irb %}
  pry(main)> gabon = Country.first
  pry(main)> 
  pry(main)> factory = RGeo::GeoJSON::EntityFactory.instance
@@ -214,7 +214,7 @@ insert into countries(name, iso_code, geom)
  pry(main)> feature = factory.feature gabon.geom
  pry(main)> hash = RGeo::GeoJSON.encode feature
  pry(main)> File.open('gabon.json', 'w') {|file| file.write hash.to_json}
- ```
+  {% endcodeblock %}
 
  Firstly we get the gabon model by calling *Country.first* since there is only one row in *countries* table. For rgeo-geojson, it uses a factory to generate the feature, so we get a factory and then calls the *feature* method and passes *gabon.geom*. This *geom* property is a RGeo geometry instance, and it's wrapped in *feature*. Then we call the *RGeo::GeoJson.encode feature* to encode it to a hash object, then at last we write the content of this hash to a file named *gabon.json*.
 
