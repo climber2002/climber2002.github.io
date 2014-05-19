@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Google Maps | AprilTouch]]></title>
   <link href="http://climber2002.github.io/blog/categories/google-maps/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2014-05-19T01:38:38+08:00</updated>
+  <updated>2014-05-19T23:22:03+08:00</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -312,15 +312,23 @@ $ rails g migration import_countries_from_shp
 
 <p> After bundle install, we can open the rails console (I have installed pry-rails to use pry instead of irb),</p>
 
-<p> <code>
- pry(main)&gt; gabon = Country.first
- pry(main)&gt;
- pry(main)&gt; factory = RGeo::GeoJSON::EntityFactory.instance
-=&gt; #&lt;RGeo::GeoJSON::EntityFactory:0x007ffe2c7265c8&gt;
- pry(main)&gt; feature = factory.feature gabon.geom
- pry(main)&gt; hash = RGeo::GeoJSON.encode feature
- pry(main)&gt; File.open('gabon.json', 'w') {|file| file.write hash.to_json}
-</code></p>
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='irb'><span class='line'><span class="go"> pry(main)&gt; gabon = Country.first</span>
+</span><span class='line'><span class="go"> pry(main)&gt;</span>
+</span><span class='line'><span class="go"> pry(main)&gt; factory = RGeo::GeoJSON::EntityFactory.instance</span>
+</span><span class='line'><span class="go">=&gt; #&amp;lt;RGeo::GeoJSON::EntityFactory:0x007ffe2c7265c8&gt;</span>
+</span><span class='line'><span class="go"> pry(main)&gt; feature = factory.feature gabon.geom</span>
+</span><span class='line'><span class="go"> pry(main)&gt; hash = RGeo::GeoJSON.encode feature</span>
+</span><span class='line'><span class="go"> pry(main)&gt; File.open(&amp;lsquo;gabon.json&amp;rsquo;, &amp;lsquo;w&amp;rsquo;) {|file| file.write hash.to_json}</span>
+</span><span class='line'><span class="go">  </span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
 <p> Firstly we get the gabon model by calling <em>Country.first</em> since there is only one row in <em>countries</em> table. For rgeo-geojson, it uses a factory to generate the feature, so we get a factory and then calls the <em>feature</em> method and passes <em>gabon.geom</em>. This <em>geom</em> property is a RGeo geometry instance, and it&rsquo;s wrapped in <em>feature</em>. Then we call the <em>RGeo::GeoJson.encode feature</em> to encode it to a hash object, then at last we write the content of this hash to a file named <em>gabon.json</em>.</p>
 
