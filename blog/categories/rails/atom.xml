@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Rails | AprilTouch]]></title>
   <link href="http://climber2002.github.io/blog/categories/rails/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2014-05-19T23:22:03+08:00</updated>
+  <updated>2014-05-25T23:58:41+08:00</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -12,6 +12,381 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Integrate PostGIS and Google Maps in Rails Part 2]]></title>
+    <link href="http://climber2002.github.io/blog/2014/05/25/integrate-postgis-and-google-maps-in-rails-part-2/"/>
+    <updated>2014-05-25T22:49:16+08:00</updated>
+    <id>http://climber2002.github.io/blog/2014/05/25/integrate-postgis-and-google-maps-in-rails-part-2</id>
+    <content type="html"><![CDATA[<p>Here is the Part 2 of <em>Integrate PostGIS and Google maps in Rails</em>, in this part we will render the provinces of Gabon on Google map. Unlike Part 1 the GeoJSON data is fetched from a static file, in this part we will see how to fetch data from PostGIS and encode them into GeoJSON directly. The result is like the following figure, the 9 provinces are rendered on the map, and when the user put his mouse over one province, that area will be highlighted, and also on the top right there is a label which shows the name of the province that is highlighted.</p>
+
+<p><img src="/images/province_highlighted.png"></p>
+
+<h2>Create the Province model</h2>
+
+<p>The first thing we need to do is to create a <strong>Province</strong> model. Like how we created the <strong>Country</strong> model in part 1, we create a <strong>Province</strong> model, and then import the data in shape file into our PostGIS database. The main part in the migration is as following,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">ImportProvincesFromShp</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Migration</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">up</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;from_shp_sql = `shp2pgsql -c -g geom -W LATIN1 -s 4326 </span><span class="si">#{</span><span class="no">Rails</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;db&#39;</span><span class="p">,</span> <span class="s1">&#39;shpfiles&#39;</span><span class="p">,</span> <span class="s1">&#39;GAB_adm1.shp&#39;</span><span class="p">)</span><span class="si">}</span><span class="sr"> provinces_ref`</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">Province.transaction do</span>
+</span><span class='line'><span class="sr">  execute from_shp_sql</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  execute &amp;lt;&amp;lt;-SQL</span>
+</span><span class='line'><span class="sr">      insert into provinces(name, geom) </span>
+</span><span class='line'><span class="sr">        select name_1, geom from provinces_ref</span>
+</span><span class='line'><span class="sr">  SQL</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  drop_table :provinces_ref</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">def</span> <span class="nf">down</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;Province.delete_all</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end</span>
+</span><span class='line'><span class="sr">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The province data is in shape file <em>GAB_adm1.shp</em>, and we fetch the province name and geometry from the shape file and import them into <em>provinces</em> table (In the shape file province name is stored as attribute <em>name_1</em>).</p>
+
+<h2>Encode the feature</h2>
+
+<p>Now we need to fetch data from database and encode them as GeoJSON. GeoJSON is a JSON format for encoding geographic data structures. The following example is stolen from <a href="http://geojson.org/">the GeoJSON website</a>. We can see that in addition to the geometry data, the JSON can also encode additional properties.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="err">&amp;ldquo;type&amp;rdquo;:</span> <span class="err">&amp;ldquo;Feature&amp;rdquo;,</span>
+</span><span class='line'>  <span class="err">&amp;ldquo;geometry&amp;rdquo;:</span> <span class="err">{&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">&lt;pre&gt;&lt;code&gt;</span><span class="nt">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Point&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="nt">&quot;coordinates&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">125.6</span><span class="p">,</span> <span class="mf">10.1</span><span class="p">]</span>
+</span><span class='line'><span class="err">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">&lt;p&gt;</span>  <span class="p">}</span><span class="err">,</span>
+</span><span class='line'>  <span class="err">&amp;ldquo;properties&amp;rdquo;:</span> <span class="p">{</span><span class="err">&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">&lt;pre&gt;&lt;code&gt;</span><span class="nt">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Dinagat Islands&quot;</span>
+</span><span class='line'><span class="err">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">&lt;p&gt;</span>  <span class="p">}</span>
+</span><span class='line'><span class="err">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We will mainly use the <em>rgeo-geojson</em> gem to do the encoding. In <em>rgeo-geojson</em> gem, it converts a geometry type to a feature and then encode the feature to a hash, and then the hash can be rendered as a JSON.</p>
+
+<p> <div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">province</span> <span class="o">=</span> <span class="no">Province</span><span class="o">.</span><span class="n">first</span>
+</span><span class='line'><span class="n">factory</span> <span class="o">=</span> <span class="ss">RGeo</span><span class="p">:</span><span class="ss">:GeoJSON</span><span class="o">::</span><span class="no">EntityFactory</span><span class="o">.</span><span class="n">instance</span>
+</span><span class='line'><span class="n">feature</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">feature</span> <span class="n">province</span><span class="o">.</span><span class="n">geom</span>
+</span><span class='line'><span class="nb">hash</span> <span class="o">=</span> <span class="ss">RGeo</span><span class="p">:</span><span class="ss">:GeoJSON</span><span class="o">.</span><span class="n">encode</span> <span class="n">feature</span>
+</span><span class='line'><span class="nb">puts</span> <span class="nb">hash</span><span class="o">.</span><span class="n">to_json</span>
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We create a Concern named <strong>Featurable</strong>, which will add a <em>featurable</em> class method into the class which includes it. So for example in <strong>Province</strong> class, we include the <strong>Featurable</strong> like following,</p>
+
+<p> <div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Province</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Base</span>
+</span><span class='line'>  <span class="kp">include</span> <span class="no">Featurable</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  featurable :geom, [:name]</span>
+</span><span class='line'><span class="sr">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The featurable accepts two parameters, the first is mandatory, which is the name of the attribute which contains the geometry data, the second parameter is an optional array of attribute names, when encoding it as GeoJSON, those attributes will be encoded as attributes. Here we encode the <em>name</em> attribute as the property of the feature. Now the <strong>Province</strong> class will have a instance method named <strong>to_feature</strong>, which returns a RGeo::GeoJSON::Feature.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">province</span> <span class="o">=</span> <span class="no">Province</span><span class="o">.</span><span class="n">first</span>
+</span><span class='line'><span class="n">feature</span> <span class="o">=</span> <span class="n">province</span><span class="o">.</span><span class="n">to_feature</span>
+</span><span class='line'><span class="nb">puts</span> <span class="ss">RGeo</span><span class="p">:</span><span class="ss">:GeoJSON</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="n">feature</span><span class="p">)</span><span class="o">.</span><span class="n">to_json</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The result will display as following, it includes the name as its property and also has an id.
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="err">&amp;ldquo;type&amp;rdquo;:&amp;ldquo;Feature&amp;rdquo;,</span>
+</span><span class='line'>  <span class="err">&amp;ldquo;geometry&amp;rdquo;:{&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">&lt;pre&gt;&lt;code&gt;</span><span class="nt">&quot;type&quot;</span><span class="p">:</span><span class="s2">&quot;MultiPolygon&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="nt">&quot;coordinates&quot;</span><span class="p">:[[[[</span><span class="mf">9.499305999999933</span><span class="p">,</span><span class="mf">0.10763800000000856</span><span class="p">],</span>
+</span><span class='line'>    <span class="err">......</span><span class="p">,[</span><span class="mf">9.748417000000074</span><span class="p">,</span><span class="mf">1.0649910000000773</span><span class="p">]]]]</span>
+</span><span class='line'><span class="p">}</span><span class="err">,</span>
+</span><span class='line'><span class="err">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">&lt;p&gt;</span>  <span class="err">&amp;ldquo;properties&amp;rdquo;:</span><span class="p">{</span><span class="err">&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">&lt;pre&gt;&lt;code&gt;</span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="s2">&quot;Estuaire&quot;</span>
+</span><span class='line'><span class="err">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">&lt;p&gt;</span>  <span class="p">}</span><span class="err">,</span>
+</span><span class='line'>  <span class="err">&amp;ldquo;id&amp;rdquo;:</span> <span class="mi">1</span>
+</span><span class='line'><span class="err">}</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now let&rsquo;s have a look at how <strong>Featurable</strong> is implemented.
+<div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Featurable</span>
+</span><span class='line'>  <span class="kp">extend</span> <span class="ss">ActiveSupport</span><span class="p">:</span><span class="ss">:Concern</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  module ClassMethods&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">featurable</span> <span class="n">geom_attr_name</span><span class="p">,</span> <span class="n">property_names</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>  <span class="n">define_method</span> <span class="ss">:to_feature</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">factory</span> <span class="o">=</span> <span class="ss">RGeo</span><span class="p">:</span><span class="ss">:GeoJSON</span><span class="o">::</span><span class="no">EntityFactory</span><span class="o">.</span><span class="n">instance</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">property_names</span> <span class="o">=</span> <span class="nb">Array</span><span class="p">(</span><span class="n">property_names</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">properties</span> <span class="o">=</span> <span class="n">property_names</span><span class="o">.</span><span class="n">inject</span><span class="p">({})</span> <span class="k">do</span> <span class="o">|</span><span class="nb">hash</span><span class="p">,</span> <span class="n">property_name</span><span class="o">|</span>
+</span><span class='line'>      <span class="nb">hash</span><span class="o">[</span><span class="n">property_name</span><span class="o">.</span><span class="n">to_sym</span><span class="o">]</span> <span class="o">=</span> <span class="n">read_attribute</span><span class="p">(</span><span class="n">property_name</span><span class="p">)</span>
+</span><span class='line'>      <span class="nb">hash</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>    <span class="n">factory</span><span class="o">.</span><span class="n">feature</span> <span class="n">read_attribute</span><span class="p">(</span><span class="n">geom_attr_name</span><span class="p">),</span> <span class="nb">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">properties</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># turns a collection of models to a feature collection</span>
+</span><span class='line'><span class="c1"># All models in the collection should implement the to_feature method</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">to_feature_collection</span> <span class="n">models</span>
+</span><span class='line'>  <span class="n">factory</span> <span class="o">=</span> <span class="ss">RGeo</span><span class="p">:</span><span class="ss">:GeoJSON</span><span class="o">::</span><span class="no">EntityFactory</span><span class="o">.</span><span class="n">instance</span>
+</span><span class='line'>  <span class="n">features</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="ss">:to_feature</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">factory</span><span class="o">.</span><span class="n">feature_collection</span> <span class="n">features</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>In the implementation of <em>featurable</em> class method, when this method is called, the class will call <em>define_method</em> to define an instance method called <em>to_feature</em> and from line 9 to 13 it will generates a hash named <em>properties</em> whose key is the property name and value is the property value. And then on line 14 it calls the <em>RGeo::GeoJSON::EntityFactory#feature</em> method to create the feature and return it.</p>
+
+<p>On line 21 it defines another class method called <em>to_feature_collection</em>, this is to convert a collection of models to a feature collection, for example the following code shows how to encode all 9 provinces as a feature collection.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">provinces</span> <span class="o">=</span> <span class="no">Province</span><span class="o">.</span><span class="n">all</span>
+</span><span class='line'><span class="n">feature_collection</span> <span class="o">=</span> <span class="no">Province</span><span class="o">.</span><span class="n">to_feature_collection</span> <span class="n">provinces</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h2>Provinces Controller</h2>
+
+<p>Now let&rsquo;s create a <strong>ProvincesController</strong> to render all 9 provinces as GeoJSON.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;class ProvincesController &amp;lt; ApplicationController&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">def</span> <span class="nf">index</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;  @provinces = Province.all</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  respond_to do |format|</span>
+</span><span class='line'><span class="sr">    format.json do  </span>
+</span><span class='line'><span class="sr">      feature_collection = Province.to_feature_collection @provinces</span>
+</span><span class='line'><span class="sr">      render json: RGeo::GeoJSON.encode(feature_collection)</span>
+</span><span class='line'><span class="sr">    end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">    format.html</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We can see that the <em>index</em> method responds to two formats, in the json format it will call <em>Province.to_feature_collection</em> to create the feature collection, and then calls <em>RGeo::GeoJSON.encode(feature_collection)</em> to encode the feature as a hash, and last calls <em>render</em> to render the hash as a JSON string.</p>
+
+<p>In the <em>views/provinces/index.html.erb</em>, the main part is as following,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">//Create an info box for displaying names</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">infoBox</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">createElement</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">div</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="nx">infoBox</span><span class="p">.</span><span class="nx">innerHTML</span> <span class="o">=</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="o">&lt;</span><span class="nx">div</span> <span class="nx">id</span><span class="o">=</span><span class="s1">&#39;info-box&#39;</span><span class="o">&gt;&lt;</span><span class="err">/div&gt;&amp;rdquo;;</span>
+</span><span class='line'><span class="nx">map</span><span class="p">.</span><span class="nx">controls</span><span class="p">[</span><span class="nx">google</span><span class="p">.</span><span class="nx">maps</span><span class="p">.</span><span class="nx">ControlPosition</span><span class="p">.</span><span class="nx">RIGHT_TOP</span><span class="p">].</span><span class="nx">push</span><span class="p">(</span><span class="nx">infoBox</span><span class="p">);</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">map</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">addListener</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">mouseover</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">map</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">revertStyle</span><span class="p">();</span>
+</span><span class='line'>  <span class="nx">$</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="err">#</span><span class="nx">info</span><span class="o">-</span><span class="nx">box</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;).</span><span class="nx">text</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">feature</span><span class="p">.</span><span class="nx">getProperty</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">name</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;));</span>
+</span><span class='line'>  <span class="nx">map</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">overrideStyle</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">feature</span><span class="p">,</span> <span class="p">{</span> <span class="nx">fillColor</span><span class="o">:</span> <span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">red</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;</span> <span class="p">});</span>
+</span><span class='line'><span class="p">});</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">map</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">addListener</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">mouseout</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">event</span><span class="p">){</span>
+</span><span class='line'>  <span class="nx">map</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">revertStyle</span><span class="p">();</span>
+</span><span class='line'><span class="p">});</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">map</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">setStyle</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">feature</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">{</span> <span class="nx">fillColor</span><span class="o">:</span> <span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">green</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;,</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">pre</span><span class="o">&gt;&lt;</span><span class="nx">code</span><span class="o">&gt;</span>      <span class="nx">strokeWeight</span><span class="o">:</span> <span class="mi">1</span><span class="p">}</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="p">});</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>From line 2 to line 4 it creates an info box at the RIGHT TOP to display province name. And from line 6 to line 10 it adds a <em>mouseover</em> event listener, so when the mouse is over the province region, it set the text of the info box to the <em>name</em> property of the feature. And on line 12 it defines a <em>mouseout</em> event listener so the style is reverted when the mouse is out of the province region.</p>
+
+<p>So in this part we showed how to fetch geometry data from PostGIS database and render them on google map. The source code for this part is at <a href="https://github.com/climber2002/schoolpro/tree/part2">github</a>.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[PostGIS and Google Maps in Rails Part 1]]></title>
