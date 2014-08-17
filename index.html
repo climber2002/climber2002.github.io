@@ -9,7 +9,7 @@
   <meta name="author" content="Andy Wang">
 
   
-  <meta name="description" content="Here is the Part 2 of Integrate PostGIS and Google maps in Rails, in this part we will render the provinces of Gabon on Google map. Unlike Part 1 the &hellip;">
+  <meta name="description" content="Recently I bought a website template from WrapBootstrap and I wanna itegrate this into a Spree website I&rsquo;m working on. According to the &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -84,7 +84,7 @@
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2014/05/25/integrate-postgis-and-google-maps-in-rails-part-2/">Integrate PostGIS and Google Maps in Rails Part 2</a></h1>
+      <h1 class="entry-title"><a href="/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/">Using Index Files in Rails 4 Assets Pipeline</a></h1>
     
     
       <p class="meta">
@@ -100,10 +100,118 @@
   
 
 
-<time datetime="2014-05-25T22:49:16+08:00" pubdate data-updated="true">May 25<span>th</span>, 2014</time>
+<time datetime="2014-08-17T21:15:28+09:30" pubdate data-updated="true">Aug 17<span>th</span>, 2014</time>
         
-           | <a href="/blog/2014/05/25/integrate-postgis-and-google-maps-in-rails-part-2/#disqus_thread"
-             data-disqus-identifier="http://climber2002.github.io/blog/2014/05/25/integrate-postgis-and-google-maps-in-rails-part-2/">Comments</a>
+           | <a href="/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/#disqus_thread"
+             data-disqus-identifier="http://climber2002.github.io/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Recently I bought a website template from <a href="https://wrapbootstrap.com/theme/tshop-responsive-e-commerce-template-WB002S263">WrapBootstrap</a> and I wanna itegrate this into a Spree website I&rsquo;m working on. According to the documents of <a href="http://edgeguides.rubyonrails.org/asset_pipeline.html">Asset Pipeline</a> and the <a href="http://railscasts.com/episodes/279-understanding-the-asset-pipeline">RailsCasts</a>. I put the stylesheets and javascripts of this template into the folder #{Rails.root}/vendor/assets/tshop. So for example, I can access a stylesheet at #{Rails.root}/vendor/assets/tshop/stylesheets/style.css from the url <a href="http://localhost:3000/assets/stylesheets/style.css">http://localhost:3000/assets/stylesheets/style.css</a></p>
+
+<p>My folder structure is like following figure,</p>
+
+<p><img src="/images/rails_vendor_folder.png"></p>
+
+<p>According to the <a href="http://edgeguides.rubyonrails.org/asset_pipeline.html#using-index-files">Rails documents</a>, I should create a file index.js and index.css under #{Rails.root}/vendor/assets/tshop, but that doesn&rsquo;t work for me. Actually I named the files as tshop.js and tshop.css.scss, as the figure above. So in the application.css and application.js I chould load the tshop library by calling,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="c">/*</span>
+</span><span class='line'><span class="c"> ...</span>
+</span><span class='line'><span class="c"> *= require tshop</span>
+</span><span class='line'><span class="c"> ...</span>
+</span><span class='line'><span class="c"> */</span>
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p> and</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'> <span class="c1">//= require tshop</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And in the tshop.css.scss, I could load the file #{Rails.root}/vendor/assets/tshop/stylesheets/style.css by using following code,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="c">/*</span>
+</span><span class='line'><span class="c"> ...</span>
+</span><span class='line'><span class="c"> *= require stylesheets/style</span>
+</span><span class='line'><span class="c"> ...</span>
+</span><span class='line'><span class="c"> */</span>
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p> And in tshop.js, the file #{Rails.root}/vendor/assets/tshop/javascripts/script.js could be loaded by following code,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'> <span class="c1">//= require javascripts/script</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the templates, I need to change the background image url, for example, in style.css,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="nc">.parallax-image-2</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">background</span><span class="o">:</span> <span class="sx">url(&quot;/assets/stylesheets/parallax/people-collage.jpg&quot;)</span> <span class="k">fixed</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">background-attachment</span><span class="o">:</span> <span class="k">fixed</span><span class="p">;</span><span class="c">/* IE FIX */</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This image file will be in #{Rails.root}/vendor/assets/tshop/stylesheets/parallax/people-collage.jpg.</p>
+
+<p>Here are the organization I used for my Rails 4 application. The point is to use <em>library.css</em> and <em>library.js</em> to name the index files instead of index.css and index.js.</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/05/26/integrate-postgis-and-google-maps-in-rails-part-2/">Integrate PostGIS and Google Maps in Rails Part 2</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-26T00:19:16+09:30" pubdate data-updated="true">May 26<span>th</span>, 2014</time>
+        
+           | <a href="/blog/2014/05/26/integrate-postgis-and-google-maps-in-rails-part-2/#disqus_thread"
+             data-disqus-identifier="http://climber2002.github.io/blog/2014/05/26/integrate-postgis-and-google-maps-in-rails-part-2/">Comments</a>
         
       </p>
     
@@ -447,7 +555,7 @@
   
 
 
-<time datetime="2014-05-18T21:53:32+08:00" pubdate data-updated="true">May 18<span>th</span>, 2014</time>
+<time datetime="2014-05-18T23:23:32+09:30" pubdate data-updated="true">May 18<span>th</span>, 2014</time>
         
            | <a href="/blog/2014/05/18/postgis-and-google-maps-in-rails-part-1/#disqus_thread"
              data-disqus-identifier="http://climber2002.github.io/blog/2014/05/18/postgis-and-google-maps-in-rails-part-1/">Comments</a>
@@ -527,7 +635,7 @@
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2013/12/08/create-development-environment-for-postgresql-on-mavericks/">Create Development Environment for PostgreSQL on Mavericks</a></h1>
+      <h1 class="entry-title"><a href="/blog/2013/12/09/create-development-environment-for-postgresql-on-mavericks/">Create Development Environment for PostgreSQL on Mavericks</a></h1>
     
     
       <p class="meta">
@@ -543,10 +651,10 @@
   
 
 
-<time datetime="2013-12-08T22:40:04+08:00" pubdate data-updated="true">Dec 8<span>th</span>, 2013</time>
+<time datetime="2013-12-09T01:10:04+10:30" pubdate data-updated="true">Dec 9<span>th</span>, 2013</time>
         
-           | <a href="/blog/2013/12/08/create-development-environment-for-postgresql-on-mavericks/#disqus_thread"
-             data-disqus-identifier="http://climber2002.github.io/blog/2013/12/08/create-development-environment-for-postgresql-on-mavericks/">Comments</a>
+           | <a href="/blog/2013/12/09/create-development-environment-for-postgresql-on-mavericks/#disqus_thread"
+             data-disqus-identifier="http://climber2002.github.io/blog/2013/12/09/create-development-environment-for-postgresql-on-mavericks/">Comments</a>
         
       </p>
     
@@ -716,7 +824,7 @@
       
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2013/12/01/my-first-post/">My First Post</a></h1>
+      <h1 class="entry-title"><a href="/blog/2013/12/02/my-first-post/">My First Post</a></h1>
     
     
       <p class="meta">
@@ -732,10 +840,10 @@
   
 
 
-<time datetime="2013-12-01T23:59:57+08:00" pubdate data-updated="true">Dec 1<span>st</span>, 2013</time>
+<time datetime="2013-12-02T02:29:57+10:30" pubdate data-updated="true">Dec 2<span>nd</span>, 2013</time>
         
-           | <a href="/blog/2013/12/01/my-first-post/#disqus_thread"
-             data-disqus-identifier="http://climber2002.github.io/blog/2013/12/01/my-first-post/">Comments</a>
+           | <a href="/blog/2013/12/02/my-first-post/#disqus_thread"
+             data-disqus-identifier="http://climber2002.github.io/blog/2013/12/02/my-first-post/">Comments</a>
         
       </p>
     
@@ -765,7 +873,11 @@
   <ul id="recent_posts">
     
       <li class="post">
-        <a href="/blog/2014/05/25/integrate-postgis-and-google-maps-in-rails-part-2/">Integrate PostGIS and Google Maps in Rails Part 2</a>
+        <a href="/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/">Using Index Files in Rails 4 Assets Pipeline</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/05/26/integrate-postgis-and-google-maps-in-rails-part-2/">Integrate PostGIS and Google Maps in Rails Part 2</a>
       </li>
     
       <li class="post">
@@ -773,11 +885,11 @@
       </li>
     
       <li class="post">
-        <a href="/blog/2013/12/08/create-development-environment-for-postgresql-on-mavericks/">Create Development Environment for PostgreSQL on Mavericks</a>
+        <a href="/blog/2013/12/09/create-development-environment-for-postgresql-on-mavericks/">Create Development Environment for PostgreSQL on Mavericks</a>
       </li>
     
       <li class="post">
-        <a href="/blog/2013/12/01/my-first-post/">My First Post</a>
+        <a href="/blog/2013/12/02/my-first-post/">My First Post</a>
       </li>
     
   </ul>

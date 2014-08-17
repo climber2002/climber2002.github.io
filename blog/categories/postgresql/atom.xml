@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Postgresql | AprilTouch]]></title>
   <link href="http://climber2002.github.io/blog/categories/postgresql/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2014-05-25T23:58:41+08:00</updated>
+  <updated>2014-08-17T21:44:38+09:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Create Development Environment for PostgreSQL on Mavericks]]></title>
-    <link href="http://climber2002.github.io/blog/2013/12/08/create-development-environment-for-postgresql-on-mavericks/"/>
-    <updated>2013-12-08T22:40:04+08:00</updated>
-    <id>http://climber2002.github.io/blog/2013/12/08/create-development-environment-for-postgresql-on-mavericks</id>
+    <link href="http://climber2002.github.io/blog/2013/12/09/create-development-environment-for-postgresql-on-mavericks/"/>
+    <updated>2013-12-09T01:10:04+10:30</updated>
+    <id>http://climber2002.github.io/blog/2013/12/09/create-development-environment-for-postgresql-on-mavericks</id>
     <content type="html"><![CDATA[<p>Recently I bought a new MacBook Pro Retina with Mevericks installed. And here are the steps that I configure the development environment for PostgreSQL on this OS for my Ruby on Rails projects.</p>
 
 <h2>Download Postgres App</h2>

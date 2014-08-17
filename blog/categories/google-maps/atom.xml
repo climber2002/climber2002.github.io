@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Google Maps | AprilTouch]]></title>
   <link href="http://climber2002.github.io/blog/categories/google-maps/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2014-05-25T23:58:41+08:00</updated>
+  <updated>2014-08-17T21:44:38+09:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Integrate PostGIS and Google Maps in Rails Part 2]]></title>
-    <link href="http://climber2002.github.io/blog/2014/05/25/integrate-postgis-and-google-maps-in-rails-part-2/"/>
-    <updated>2014-05-25T22:49:16+08:00</updated>
-    <id>http://climber2002.github.io/blog/2014/05/25/integrate-postgis-and-google-maps-in-rails-part-2</id>
+    <link href="http://climber2002.github.io/blog/2014/05/26/integrate-postgis-and-google-maps-in-rails-part-2/"/>
+    <updated>2014-05-26T00:19:16+09:30</updated>
+    <id>http://climber2002.github.io/blog/2014/05/26/integrate-postgis-and-google-maps-in-rails-part-2</id>
     <content type="html"><![CDATA[<p>Here is the Part 2 of <em>Integrate PostGIS and Google maps in Rails</em>, in this part we will render the provinces of Gabon on Google map. Unlike Part 1 the GeoJSON data is fetched from a static file, in this part we will see how to fetch data from PostGIS and encode them into GeoJSON directly. The result is like the following figure, the 9 provinces are rendered on the map, and when the user put his mouse over one province, that area will be highlighted, and also on the top right there is a label which shows the name of the province that is highlighted.</p>
 
 <p><img src="/images/province_highlighted.png"></p>
@@ -391,7 +391,7 @@
   <entry>
     <title type="html"><![CDATA[PostGIS and Google Maps in Rails Part 1]]></title>
     <link href="http://climber2002.github.io/blog/2014/05/18/postgis-and-google-maps-in-rails-part-1/"/>
-    <updated>2014-05-18T21:53:32+08:00</updated>
+    <updated>2014-05-18T23:23:32+09:30</updated>
     <id>http://climber2002.github.io/blog/2014/05/18/postgis-and-google-maps-in-rails-part-1</id>
     <content type="html"><![CDATA[<p>Recently I need to work on a Rails project which is to manage the public and private schools in Gabon, a small country in Africa. And I need to integrate PostGIS and Google maps. I will create a series of blogs to share what I have done, and I will point out some common gotchas while integrate Rails with PostGIS and Google maps.</p>
 

@@ -4,7 +4,7 @@
   <title><![CDATA[AprilTouch]]></title>
   <link href="http://climber2002.github.io/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2014-05-25T23:58:41+08:00</updated>
+  <updated>2014-08-17T21:44:38+09:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -14,10 +14,88 @@
 
   
   <entry>
+    <title type="html"><![CDATA[Using Index Files in Rails 4 Assets Pipeline]]></title>
+    <link href="http://climber2002.github.io/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/"/>
+    <updated>2014-08-17T21:15:28+09:30</updated>
+    <id>http://climber2002.github.io/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline</id>
+    <content type="html"><![CDATA[<p>Recently I bought a website template from <a href="https://wrapbootstrap.com/theme/tshop-responsive-e-commerce-template-WB002S263">WrapBootstrap</a> and I wanna itegrate this into a Spree website I&rsquo;m working on. According to the documents of <a href="http://edgeguides.rubyonrails.org/asset_pipeline.html">Asset Pipeline</a> and the <a href="http://railscasts.com/episodes/279-understanding-the-asset-pipeline">RailsCasts</a>. I put the stylesheets and javascripts of this template into the folder #{Rails.root}/vendor/assets/tshop. So for example, I can access a stylesheet at #{Rails.root}/vendor/assets/tshop/stylesheets/style.css from the url <a href="http://localhost:3000/assets/stylesheets/style.css">http://localhost:3000/assets/stylesheets/style.css</a></p>
+
+<p>My folder structure is like following figure,</p>
+
+<p><img src="http://climber2002.github.io/images/rails_vendor_folder.png"></p>
+
+<p>According to the <a href="http://edgeguides.rubyonrails.org/asset_pipeline.html#using-index-files">Rails documents</a>, I should create a file index.js and index.css under #{Rails.root}/vendor/assets/tshop, but that doesn&rsquo;t work for me. Actually I named the files as tshop.js and tshop.css.scss, as the figure above. So in the application.css and application.js I chould load the tshop library by calling,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="c">/*</span>
+</span><span class='line'><span class="c"> ...</span>
+</span><span class='line'><span class="c"> *= require tshop</span>
+</span><span class='line'><span class="c"> ...</span>
+</span><span class='line'><span class="c"> */</span>
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p> and</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'> <span class="c1">//= require tshop</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And in the tshop.css.scss, I could load the file #{Rails.root}/vendor/assets/tshop/stylesheets/style.css by using following code,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="c">/*</span>
+</span><span class='line'><span class="c"> ...</span>
+</span><span class='line'><span class="c"> *= require stylesheets/style</span>
+</span><span class='line'><span class="c"> ...</span>
+</span><span class='line'><span class="c"> */</span>
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p> And in tshop.js, the file #{Rails.root}/vendor/assets/tshop/javascripts/script.js could be loaded by following code,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'> <span class="c1">//= require javascripts/script</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the templates, I need to change the background image url, for example, in style.css,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="nc">.parallax-image-2</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">background</span><span class="o">:</span> <span class="sx">url(&quot;/assets/stylesheets/parallax/people-collage.jpg&quot;)</span> <span class="k">fixed</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">background-attachment</span><span class="o">:</span> <span class="k">fixed</span><span class="p">;</span><span class="c">/* IE FIX */</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This image file will be in #{Rails.root}/vendor/assets/tshop/stylesheets/parallax/people-collage.jpg.</p>
+
+<p>Here are the organization I used for my Rails 4 application. The point is to use <em>library.css</em> and <em>library.js</em> to name the index files instead of index.css and index.js.</p>
+]]></content>
+  </entry>
+  
+  <entry>
     <title type="html"><![CDATA[Integrate PostGIS and Google Maps in Rails Part 2]]></title>
-    <link href="http://climber2002.github.io/blog/2014/05/25/integrate-postgis-and-google-maps-in-rails-part-2/"/>
-    <updated>2014-05-25T22:49:16+08:00</updated>
-    <id>http://climber2002.github.io/blog/2014/05/25/integrate-postgis-and-google-maps-in-rails-part-2</id>
+    <link href="http://climber2002.github.io/blog/2014/05/26/integrate-postgis-and-google-maps-in-rails-part-2/"/>
+    <updated>2014-05-26T00:19:16+09:30</updated>
+    <id>http://climber2002.github.io/blog/2014/05/26/integrate-postgis-and-google-maps-in-rails-part-2</id>
     <content type="html"><![CDATA[<p>Here is the Part 2 of <em>Integrate PostGIS and Google maps in Rails</em>, in this part we will render the provinces of Gabon on Google map. Unlike Part 1 the GeoJSON data is fetched from a static file, in this part we will see how to fetch data from PostGIS and encode them into GeoJSON directly. The result is like the following figure, the 9 provinces are rendered on the map, and when the user put his mouse over one province, that area will be highlighted, and also on the top right there is a label which shows the name of the province that is highlighted.</p>
 
 <p><img src="http://climber2002.github.io/images/province_highlighted.png"></p>
@@ -333,7 +411,7 @@
   <entry>
     <title type="html"><![CDATA[PostGIS and Google Maps in Rails Part 1]]></title>
     <link href="http://climber2002.github.io/blog/2014/05/18/postgis-and-google-maps-in-rails-part-1/"/>
-    <updated>2014-05-18T21:53:32+08:00</updated>
+    <updated>2014-05-18T23:23:32+09:30</updated>
     <id>http://climber2002.github.io/blog/2014/05/18/postgis-and-google-maps-in-rails-part-1</id>
     <content type="html"><![CDATA[<p>Recently I need to work on a Rails project which is to manage the public and private schools in Gabon, a small country in Africa. And I need to integrate PostGIS and Google maps. I will create a series of blogs to share what I have done, and I will point out some common gotchas while integrate Rails with PostGIS and Google maps.</p>
 
@@ -703,9 +781,9 @@
   
   <entry>
     <title type="html"><![CDATA[Create Development Environment for PostgreSQL on Mavericks]]></title>
-    <link href="http://climber2002.github.io/blog/2013/12/08/create-development-environment-for-postgresql-on-mavericks/"/>
-    <updated>2013-12-08T22:40:04+08:00</updated>
-    <id>http://climber2002.github.io/blog/2013/12/08/create-development-environment-for-postgresql-on-mavericks</id>
+    <link href="http://climber2002.github.io/blog/2013/12/09/create-development-environment-for-postgresql-on-mavericks/"/>
+    <updated>2013-12-09T01:10:04+10:30</updated>
+    <id>http://climber2002.github.io/blog/2013/12/09/create-development-environment-for-postgresql-on-mavericks</id>
     <content type="html"><![CDATA[<p>Recently I bought a new MacBook Pro Retina with Mevericks installed. And here are the steps that I configure the development environment for PostgreSQL on this OS for my Ruby on Rails projects.</p>
 
 <h2>Download Postgres App</h2>
@@ -862,9 +940,9 @@
   
   <entry>
     <title type="html"><![CDATA[My First Post]]></title>
-    <link href="http://climber2002.github.io/blog/2013/12/01/my-first-post/"/>
-    <updated>2013-12-01T23:59:57+08:00</updated>
-    <id>http://climber2002.github.io/blog/2013/12/01/my-first-post</id>
+    <link href="http://climber2002.github.io/blog/2013/12/02/my-first-post/"/>
+    <updated>2013-12-02T02:29:57+10:30</updated>
+    <id>http://climber2002.github.io/blog/2013/12/02/my-first-post</id>
     <content type="html"><![CDATA[<p>My name is Andy Wang and this is my personal blog. I&rsquo;ll try to blog about my experience on Ruby and iOS programming. Hello world!</p>
 
 <p>This site is generated by <a href="http://octopress.org/">Octopress</a></p>
