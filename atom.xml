@@ -4,7 +4,7 @@
   <title><![CDATA[AprilTouch]]></title>
   <link href="http://climber2002.github.io/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2014-08-17T21:44:38+09:30</updated>
+  <updated>2014-08-24T20:21:56+09:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -12,6 +12,619 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Digging Rails - How Rails Initializes Itself]]></title>
+    <link href="http://climber2002.github.io/blog/2014/08/24/digging-rails-how-rails-initializes-itself/"/>
+    <updated>2014-08-24T17:35:26+09:30</updated>
+    <id>http://climber2002.github.io/blog/2014/08/24/digging-rails-how-rails-initializes-itself</id>
+    <content type="html"><![CDATA[<p>Recently I&rsquo;m reading the Rails source code and I wanna create a series of blogs to talk about it. Today I&rsquo;m going to introduct the initialization process of Rails. Just notice that I use the latest Rails 4.2.0 beta1 code for analysis. If you use Rails 4.1 or earlier, the code may be different (actually it is).</p>
+
+<h2>bin/rails</h2>
+
+<p>When we run <em>rails s</em> in a Rails application folder, it will call into the bin/rails script. This script has following contents,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+</span><span class='line'><span class="k">begin</span>
+</span><span class='line'>  <span class="nb">load</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">&quot;../spring&quot;</span><span class="p">,</span> <span class="bp">__FILE__</span><span class="p">)</span>
+</span><span class='line'><span class="k">rescue</span> <span class="no">LoadError</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="no">APP_PATH</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s1">&#39;../../config/application&#39;</span><span class="p">,</span>  <span class="bp">__FILE__</span><span class="p">)</span>
+</span><span class='line'><span class="n">require_relative</span> <span class="s1">&#39;../config/boot&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;rails/commands&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Firstly it tries to call the <em>spring</em> script which is an application preloader to speed up development by keeping our application in the background. And then it defines the APP_PATH constant, which points to the <strong>&lt;app_root>/config/application</strong>, and next it requires the config/boot.rb.</p>
+
+<h2>config/boot.rb</h2>
+
+<p>The config/boot.rb has following contents,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">ENV</span><span class="o">[</span><span class="s1">&#39;BUNDLE_GEMFILE&#39;</span><span class="o">]</span> <span class="o">||=</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s1">&#39;../../Gemfile&#39;</span><span class="p">,</span> <span class="bp">__FILE__</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;bundler/setup&#39;</span> <span class="c1"># Set up gems listed in the Gemfile.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Since Rails uses <a href="http://bundler.io/">Bundler</a> to manage the rubygems, it defines a Gemfile which declares all dependencies of the application. The <code>ENV['BUNDLE_GEMFILE']</code> is set to the path of this Gemfile, and <code>require 'bundler/setup'</code> is calling Bundler to resolve the load paths of your Gem dependencies.</p>
+
+<h2>rails/command.rb</h2>
+
+<p>The <em>rails</em> next requires &lsquo;rails/commands&rsquo;, and let&rsquo;s have a look at that file,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># rails/railties/lib/rails/commands.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">ARGV</span> <span class="o">&lt;&lt;</span> <span class="s1">&#39;--help&#39;</span> <span class="k">if</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">empty?</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">aliases</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>  <span class="s2">&quot;g&quot;</span>  <span class="o">=&gt;</span> <span class="s2">&quot;generate&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;d&quot;</span>  <span class="o">=&gt;</span> <span class="s2">&quot;destroy&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;c&quot;</span>  <span class="o">=&gt;</span> <span class="s2">&quot;console&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;s&quot;</span>  <span class="o">=&gt;</span> <span class="s2">&quot;server&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;db&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;dbconsole&quot;</span><span class="p">,</span>
+</span><span class='line'>  <span class="s2">&quot;r&quot;</span>  <span class="o">=&gt;</span> <span class="s2">&quot;runner&quot;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">command</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">shift</span>
+</span><span class='line'><span class="n">command</span> <span class="o">=</span> <span class="n">aliases</span><span class="o">[</span><span class="n">command</span><span class="o">]</span> <span class="o">||</span> <span class="n">command</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;rails/commands/commands_tasks&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="ss">Rails</span><span class="p">:</span><span class="ss">:CommandsTasks</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">ARGV</span><span class="p">)</span><span class="o">.</span><span class="n">run_command!</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can see that when we pass <em>s</em> or <em>server</em> to the <em>rails</em> script, it will set <em>command</em> to <em>server</em> and then create an instance of Rails::CommandsTasks and call its <code>run_command!</code> instance method.</p>
+
+<h2>rails/commands/commands_tasks.rb</h2>
+
+<p>The rails/commands/commands_tasks defines the <code>Rails::CommandsTasks</code> class, let&rsquo;s check the important part of this class,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># rails/railties/lib/rails/commands/commands_tasks.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">Rails</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">CommandsTasks</span>
+</span><span class='line'>    <span class="kp">attr_reader</span> <span class="ss">:argv</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="no">COMMAND_WHITELIST</span> <span class="o">=</span> <span class="sx">%w(plugin generate destroy console server dbconsole runner new version help)</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@argv</span> <span class="o">=</span> <span class="n">argv</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">run_command!</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">command</span> <span class="o">=</span> <span class="n">parse_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">if</span> <span class="no">COMMAND_WHITELIST</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+</span><span class='line'>        <span class="nb">send</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">else</span>
+</span><span class='line'>        <span class="n">write_error_message</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">def</span> <span class="nf">parse_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">case</span> <span class="n">command</span>
+</span><span class='line'>        <span class="k">when</span> <span class="s1">&#39;--version&#39;</span><span class="p">,</span> <span class="s1">&#39;-v&#39;</span>
+</span><span class='line'>          <span class="s1">&#39;version&#39;</span>
+</span><span class='line'>        <span class="k">when</span> <span class="s1">&#39;--help&#39;</span><span class="p">,</span> <span class="s1">&#39;-h&#39;</span>
+</span><span class='line'>          <span class="s1">&#39;help&#39;</span>
+</span><span class='line'>        <span class="k">else</span>
+</span><span class='line'>          <span class="n">command</span>
+</span><span class='line'>        <span class="k">end</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the <code>run_command!</code> instance method, it checks that if the COMMAND_WHITELIST includes the command passed, then it will just invoke an instance method whose method name matches the <em>command</em> parameter. So in our case, if we passed <em>server</em> it will invoke the <code>server</code> method, which we show below,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># rails/railties/lib/rails/commands/commands_tasks.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">Rails</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">CommandsTasks</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">server</span>
+</span><span class='line'>      <span class="n">set_application_directory!</span>
+</span><span class='line'>      <span class="n">require_command!</span><span class="p">(</span><span class="s2">&quot;server&quot;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="ss">Rails</span><span class="p">:</span><span class="ss">:Server</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">tap</span> <span class="k">do</span> <span class="o">|</span><span class="n">server</span><span class="o">|</span>
+</span><span class='line'>        <span class="c1"># We need to require application after the server sets environment,</span>
+</span><span class='line'>        <span class="c1"># otherwise the --environment option given to the server won&#39;t propagate.</span>
+</span><span class='line'>        <span class="nb">require</span> <span class="no">APP_PATH</span>
+</span><span class='line'>        <span class="no">Dir</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">server</span><span class="o">.</span><span class="n">start</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can see that it creates a Rails::Server instance and then require our application file which is already defined in APP_PATH.</p>
+
+<p>Let&rsquo;s first have a look at the config/application.rb</p>
+
+<h2>config/application.rb</h2>
+
+<p>The config/application.rb has following contents,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config/application.rb</span>
+</span><span class='line'><span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s1">&#39;../boot&#39;</span><span class="p">,</span> <span class="bp">__FILE__</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;rails/all&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Require the gems listed in Gemfile, including any gems</span>
+</span><span class='line'><span class="c1"># you&#39;ve limited to :test, :development, or :production.</span>
+</span><span class='line'><span class="no">Bundler</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="o">*</span><span class="no">Rails</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">Sample</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Application</span> <span class="o">&lt;</span> <span class="ss">Rails</span><span class="p">:</span><span class="ss">:Application</span>
+</span><span class='line'>    <span class="c1"># Settings in config/environments/* take precedence over those specified here.</span>
+</span><span class='line'>    <span class="c1"># Application configuration should go into files in config/initializers</span>
+</span><span class='line'>    <span class="c1"># -- all .rb files in that directory are automatically loaded.</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Set Time.zone default to the specified zone and make Active Record auto-convert to this zone.</span>
+</span><span class='line'>    <span class="c1"># Run &quot;rake -D time&quot; for a list of tasks for finding time zone names. Default is UTC.</span>
+</span><span class='line'>    <span class="c1"># config.time_zone = &#39;Central Time (US &amp; Canada)&#39;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># The default locale is :en and all translations from config/locales/*.rb,yml are auto loaded.</span>
+</span><span class='line'>    <span class="c1"># config.i18n.load_path += Dir[Rails.root.join(&#39;my&#39;, &#39;locales&#39;, &#39;*.{rb,yml}&#39;).to_s]</span>
+</span><span class='line'>    <span class="c1"># config.i18n.default_locale = :de</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># For not swallow errors in after_commit/after_rollback callbacks.</span>
+</span><span class='line'>    <span class="n">config</span><span class="o">.</span><span class="n">active_record</span><span class="o">.</span><span class="n">raise_in_transactional_callbacks</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Firstly it requires the config/boot.rb, since above this file is already required by rails script, the require has no effect here.</p>
+
+<p>Next it requires the &lsquo;rails/all&rsquo;, this file has following contents, it just load the railtie of each module. Each module has its own railtie, which is to manage the initialization and configuration. We will talk about railties in another blog so I&rsquo;ll not explain here.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># rails/railties/lib/rails/all.rb</span>
+</span><span class='line'><span class="nb">require</span> <span class="s2">&quot;rails&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sx">%w(</span>
+</span><span class='line'><span class="sx">  active_record</span>
+</span><span class='line'><span class="sx">  action_controller</span>
+</span><span class='line'><span class="sx">  action_view</span>
+</span><span class='line'><span class="sx">  action_mailer</span>
+</span><span class='line'><span class="sx">  active_job</span>
+</span><span class='line'><span class="sx">  rails/test_unit</span>
+</span><span class='line'><span class="sx">  sprockets</span>
+</span><span class='line'><span class="sx">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">framework</span><span class="o">|</span>
+</span><span class='line'>  <span class="k">begin</span>
+</span><span class='line'>    <span class="nb">require</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">framework</span><span class="si">}</span><span class="s2">/railtie&quot;</span>
+</span><span class='line'>  <span class="k">rescue</span> <span class="no">LoadError</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And then next it requires the gems we defined in Gemfile by calling <code>Bundler.require</code>. And next our application class is defined. Since I named my application as <em>sample</em>, the class is in <code>Sample</code> Module.</p>
+
+<p>The Sample::Application extends from Rails::Application. After this class is defined the <code>Rails.application</code> will be set to an instance of Sample::Application. Why? Let&rsquo;s have a look at <code>Rails</code> module.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># rails/railties/lib/rails.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">Rails</span>
+</span><span class='line'>  <span class="k">class</span> <span class="o">&lt;&lt;</span> <span class="nb">self</span>
+</span><span class='line'>    <span class="vi">@application</span> <span class="o">=</span> <span class="vi">@app_class</span> <span class="o">=</span> <span class="kp">nil</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kp">attr_writer</span> <span class="ss">:application</span>
+</span><span class='line'>    <span class="kp">attr_accessor</span> <span class="ss">:app_class</span><span class="p">,</span> <span class="ss">:cache</span><span class="p">,</span> <span class="ss">:logger</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">application</span>
+</span><span class='line'>      <span class="vi">@application</span> <span class="o">||=</span> <span class="p">(</span><span class="n">app_class</span><span class="o">.</span><span class="n">instance</span> <span class="k">if</span> <span class="n">app_class</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can see that it defines two instance variables in Rails&rsquo;s singleton class, <em>@application</em> and <em>@app_class</em>. And after the app_class is defined, the <em>Rails.application</em> returns the <em>@application</em> if it&rsquo;s already defined, if not, it will call <em>app_class.instance</em> to create an instance.</p>
+
+<p>So when does the Rails.app_class is defined? Let&rsquo;s have a look at the Rails::Application class.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># rails/railties/lib/rails/application.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">Rails</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Application</span> <span class="o">&lt;</span> <span class="no">Engine</span>
+</span><span class='line'>    <span class="k">class</span> <span class="o">&lt;&lt;</span> <span class="nb">self</span>
+</span><span class='line'>      <span class="k">def</span> <span class="nf">inherited</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">super</span>
+</span><span class='line'>        <span class="no">Rails</span><span class="o">.</span><span class="n">app_class</span> <span class="o">=</span> <span class="n">base</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can see that if there is a class inherits it, it will set the Rails.app_class to the inherited class, in our case Sample::Application. So after class Sample::Application is defined, the Rails.app_class is set, and then if we call <code>Rails.application</code>, the application instance will be initialized.</p>
+
+<p>Notice that the <code>new</code> method in Rails::Application is set to private, so we can only call <code>instance</code> to generate an instance. And this instance is a singleton, which is reasonable since one Rails application should have only one application instance.</p>
+
+<h2>Rails::Server</h2>
+
+<p>After the application instance is instantiated, we go back to Rails::CommandsTasks#server method, it will call <code>Dir.chdir(Rails.application.root)</code> to go to application root folder, and then call <code>server.start</code>. Let&rsquo;s have a look how the Rails::Server is defined.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># rails/railties/lib/rails/commands/server.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">Rails</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Server</span> <span class="o">&lt;</span> <span class="o">::</span><span class="ss">Rack</span><span class="p">:</span><span class="ss">:Server</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="o">*</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">super</span>
+</span><span class='line'>      <span class="n">set_environment</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">start</span>
+</span><span class='line'>      <span class="n">print_boot_information</span>
+</span><span class='line'>      <span class="nb">trap</span><span class="p">(</span><span class="ss">:INT</span><span class="p">)</span> <span class="p">{</span> <span class="nb">exit</span> <span class="p">}</span>
+</span><span class='line'>      <span class="n">create_tmp_directories</span>
+</span><span class='line'>      <span class="n">log_to_stdout</span> <span class="k">if</span> <span class="n">options</span><span class="o">[</span><span class="ss">:log_stdout</span><span class="o">]</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">super</span>
+</span><span class='line'>    <span class="k">ensure</span>
+</span><span class='line'>      <span class="c1"># The &#39;-h&#39; option calls exit before @options is set.</span>
+</span><span class='line'>      <span class="c1"># If we call &#39;options&#39; with it unset, we get double help banners.</span>
+</span><span class='line'>      <span class="nb">puts</span> <span class="s1">&#39;Exiting&#39;</span> <span class="k">unless</span> <span class="vi">@options</span> <span class="o">&amp;&amp;</span> <span class="n">options</span><span class="o">[</span><span class="ss">:daemonize</span><span class="o">]</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># TODO: this is no longer required but we keep it for the moment to support older config.ru files.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">app</span>
+</span><span class='line'>      <span class="vi">@app</span> <span class="o">||=</span> <span class="k">begin</span>
+</span><span class='line'>        <span class="n">app</span> <span class="o">=</span> <span class="k">super</span>
+</span><span class='line'>        <span class="n">app</span><span class="o">.</span><span class="n">respond_to?</span><span class="p">(</span><span class="ss">:to_app</span><span class="p">)</span> <span class="p">?</span> <span class="n">app</span><span class="o">.</span><span class="n">to_app</span> <span class="p">:</span> <span class="n">app</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can see that Rails::Server extends from ::Rack::Server. <a href="http://rack.github.io/">Rack</a> is a specification which defines an interface between the web server and application. To support Rack, you need to define an <em>app</em> object, it has a <code>call</code> method, which takes the environment hash as a parameter, and returning an Array with three elements:</p>
+
+<ul>
+<li>The HTTP response code</li>
+<li>A Hash of headers</li>
+<li>The response body, which must respond to each</li>
+</ul>
+
+
+<p>Although this interface is very simple, you can configure middleware around the app and intercept the request and response.</p>
+
+<p>Rack is also a <a href="https://github.com/rack/rack">rubygem</a>. It provides a set of middleware such as logging, set content length in HTTP response, etc. And it also defines a simple DSL to configure the middleware and app, the config file has <em>ru</em> extension and Rack will load a file called <em>config.ru</em> by default.</p>
+
+<p>Let&rsquo;s have a look at the ::Rack::Server class,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Rack</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Server</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kp">attr_writer</span> <span class="ss">:options</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">options</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+</span><span class='line'>      <span class="vi">@options</span> <span class="o">=</span> <span class="n">options</span>
+</span><span class='line'>      <span class="vi">@app</span> <span class="o">=</span> <span class="n">options</span><span class="o">[</span><span class="ss">:app</span><span class="o">]</span> <span class="k">if</span> <span class="n">options</span> <span class="o">&amp;&amp;</span> <span class="n">options</span><span class="o">[</span><span class="ss">:app</span><span class="o">]</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">app</span>
+</span><span class='line'>      <span class="vi">@app</span> <span class="o">||=</span> <span class="n">options</span><span class="o">[</span><span class="ss">:builder</span><span class="o">]</span> <span class="p">?</span> <span class="n">build_app_from_string</span> <span class="p">:</span> <span class="n">build_app_and_options_from_config</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">start</span> <span class="o">&amp;</span><span class="n">blk</span>
+</span><span class='line'>      <span class="c1"># ...</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">server</span><span class="o">.</span><span class="n">run</span> <span class="n">wrapped_app</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">blk</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">server</span>
+</span><span class='line'>      <span class="vi">@_server</span> <span class="o">||=</span> <span class="ss">Rack</span><span class="p">:</span><span class="ss">:Handler</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">options</span><span class="o">[</span><span class="ss">:server</span><span class="o">]</span><span class="p">)</span> <span class="o">||</span> <span class="ss">Rack</span><span class="p">:</span><span class="ss">:Handler</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kp">private</span>
+</span><span class='line'>      <span class="k">def</span> <span class="nf">build_app_and_options_from_config</span>
+</span><span class='line'>        <span class="k">if</span> <span class="o">!::</span><span class="no">File</span><span class="o">.</span><span class="n">exist?</span> <span class="n">options</span><span class="o">[</span><span class="ss">:config</span><span class="o">]</span>
+</span><span class='line'>          <span class="nb">abort</span> <span class="s2">&quot;configuration </span><span class="si">#{</span><span class="n">options</span><span class="o">[</span><span class="ss">:config</span><span class="o">]</span><span class="si">}</span><span class="s2"> not found&quot;</span>
+</span><span class='line'>        <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">app</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="ss">Rack</span><span class="p">:</span><span class="ss">:Builder</span><span class="o">.</span><span class="n">parse_file</span><span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">options</span><span class="o">[</span><span class="ss">:config</span><span class="o">]</span><span class="p">,</span> <span class="n">opt_parser</span><span class="p">)</span>
+</span><span class='line'>        <span class="nb">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">merge!</span> <span class="n">options</span>
+</span><span class='line'>        <span class="n">app</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">def</span> <span class="nf">build_app_from_string</span>
+</span><span class='line'>        <span class="ss">Rack</span><span class="p">:</span><span class="ss">:Builder</span><span class="o">.</span><span class="n">new_from_string</span><span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">options</span><span class="o">[</span><span class="ss">:builder</span><span class="o">]</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">def</span> <span class="nf">wrapped_app</span>
+</span><span class='line'>        <span class="vi">@wrapped_app</span> <span class="o">||=</span> <span class="n">build_app</span> <span class="n">app</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>I only leave the relevant code here and omitted some parts such as option parsing. We can see that the <code>start</code> method creates a <code>@_server</code> instance variable which is a handler represents the web server interface, it has a <code>run</code> method which accepts the <em>app</em>. The <em>app</em> is the Rack app object we mentioned above, it&rsquo;s an object which reponds to <code>call</code> method which accepts an environment hash and returns an array with 3 elements: the HTTP status code, response HTTP headers and the body.</p>
+
+<p>The <code>wrapped_app</code> calls the <code>build_app</code> method which just wraps some default middleware around the app. And the <code>app</code> method actually sets the <code>@app</code> instance variable, which is actually read from the config.ru file (by <code>build_app_from_string</code> method).</p>
+
+<h2>config.ru</h2>
+
+<p>Every rails application has a <em>config.ru</em> file at root folder. Let&rsquo;s have a look at that file,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># This file is used by Rack-based servers to start the application.</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">require</span> <span class="o">::</span><span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s1">&#39;../config/environment&#39;</span><span class="p">,</span>  <span class="bp">__FILE__</span><span class="p">)</span>
+</span><span class='line'><span class="n">run</span> <span class="no">Rails</span><span class="o">.</span><span class="n">application</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This file is actually a ruby file, it first requires the <em>config/environment.rb</em> file and then calls <code>run Rails.application</code>. The <code>run</code> method is defined in Rack DSL, and it accepts the app object. So we can imagine that if we call <code>Rails.application.respond_to?(:call)</code> it should return true.</p>
+
+<h2>config/environment.rb</h2>
+
+<p>Let&rsquo;s have a look what&rsquo;s inside config/environment.rb.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># Load the Rails application.</span>
+</span><span class='line'><span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s1">&#39;../application&#39;</span><span class="p">,</span> <span class="bp">__FILE__</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Initialize the Rails application.</span>
+</span><span class='line'><span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">initialize!</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It just requires <em>config/application.rb</em> (which we already required) and then initialize the application by calling <code>Rails.application.initialize!</code>. After that the initialization process is finished and the <code>Rails.application</code> could be used as Rack application.</p>
+
+<p>In this part we had a detailed look at the Rails initialization process and we will dig into Railties and <code>Rails.application.initialize!</code> in following series.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Using Index Files in Rails 4 Assets Pipeline]]></title>

@@ -29,12 +29,18 @@
         <lastmod>2014-08-17T21:39:55+09:30</lastmod>
     </url>
     <url>
+        <loc>
+            http://climber2002.github.io/blog/2014/08/24/digging-rails-how-rails-initializes-itself/
+        </loc>
+        <lastmod>2014-08-24T20:19:33+09:30</lastmod>
+    </url>
+    <url>
         <loc>http://climber2002.github.io/blog/archives/</loc>
-        <lastmod>2014-08-17T21:39:55+09:30</lastmod>
+        <lastmod>2014-08-24T20:19:33+09:30</lastmod>
     </url>
     <url>
         <loc>http://climber2002.github.io/</loc>
-        <lastmod>2014-08-17T21:39:55+09:30</lastmod>
+        <lastmod>2014-08-24T20:19:33+09:30</lastmod>
     </url>
     <url>
         <loc>http://climber2002.github.io/robots.txt</loc>
