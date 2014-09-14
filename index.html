@@ -9,7 +9,7 @@
   <meta name="author" content="Andy Wang">
 
   
-  <meta name="description" content="In last post we discussed the initialization process when a Rails application starts. And we disucssed in config/environment.rb it calls Rails. &hellip;">
+  <meta name="description" content="In this blog I will list the steps needed to deploy a Rails 4 application on an Amazon EC2 server. The OS is Ubuntu Server 14.04 LTS, the database is &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -78,6 +78,330 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server/">Depoly a Rails 4 Application on an Amazon EC2 Server</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-07T17:45:05+09:30" pubdate data-updated="true">Sep 7<span>th</span>, 2014</time>
+        
+           | <a href="/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server/#disqus_thread"
+             data-disqus-identifier="http://climber2002.github.io/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server/">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>In this blog I will list the steps needed to deploy a Rails 4 application on an Amazon EC2 server. The OS is Ubuntu Server 14.04 LTS, the database is Postgresql and the web server is Unicorn + Ngnix. Previously I mainly deploy the project on Engine Yard. But this time I need to deploy it on a server manually.</p>
+
+<h2>Updating And Preparing The Operating System</h2>
+
+<h3>Update the Operating System</h3>
+
+<p>Firstly we need to update our OS by running following command,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo apt-get update
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Change locale file</h3>
+
+<p>In some cases on my server it shows the following warnings,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>perl: warning: Setting locale failed.   
+</span><span class='line'>perl: warning: Please check that your locale settings:   
+</span><span class='line'>        LANGUAGE = "en_US:en",   
+</span><span class='line'>        LC_ALL = (unset),   
+</span><span class='line'>        LC_MESSAGES = "en_US.UTF-8",   
+</span><span class='line'>        LANG = "en_US.UTF-8"   
+</span><span class='line'>    are supported and installed on your system.</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The solution is to edit the <strong>/etc/default/locale</strong> and add the following contents,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>LC_ALL=en_US.UTF-8
+</span><span class='line'>LANG=en_US.UTF-8</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Install the necessary packages</h3>
+
+<p>Next we need to install the following necessary packages by running,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo apt-get install build-essential openssl libreadline6 libreadline6-dev zlib1g zlib1g-dev libssl-dev git-core python-software-properties nodejs libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt-dev autoconf libc6-dev ncurses-dev automake libtool bison pkg-config
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <em>python-software-properties</em> allows us to easily manage your distribution and independent software vendor software sources. It will be useful when we install Postgresql and Nginx.</p>
+
+<p>The <em>nodejs</em> is a Javascript runtime for Rails.</p>
+
+<h2>Install rbenv</h2>
+
+<p>Now we need to install a Ruby runtime. I choose rbenv instead of rvm, which is more lightweight for production.</p>
+
+<p>Let&rsquo;s install rbenv by running the following command,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>curl https://raw.githubusercontent.com/fesplugas/rbenv-installer/master/bin/rbenv-installer | bash
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After installation, following its instructions, add the following content at the top of ~/.bash_profile</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">export </span><span class="nv">RBENV_ROOT</span><span class="o">=</span><span class="s2">&quot;${HOME}/.rbenv&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="o">[</span> -d <span class="s2">&quot;${RBENV_ROOT}&quot;</span> <span class="o">]</span>; <span class="k">then</span>
+</span><span class='line'><span class="k">  </span><span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span><span class="s2">&quot;${RBENV_ROOT}/bin:${PATH}&quot;</span>
+</span><span class='line'>  <span class="nb">eval</span> <span class="s2">&quot;$(rbenv init -)&quot;</span>
+</span><span class='line'><span class="k">fi</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After that run <code>source ~/.bash_profile</code> to make the changed effective.</p>
+
+<p>Now we install Ruby 2.1.2 and make it global by running following commands,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>rbenv install 2.1.2 --verbose
+</span><span class='line'>rbenv rehash
+</span><span class='line'>rbenv global 2.1.2
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The install could take a while so grab a cup of coffee.</p>
+
+<p>After Ruby 2.1.2 is installed, we can install bundler by typing,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>gem install bundler
+</span><span class='line'>rbenv rehash
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Install Nginx</h2>
+
+<p>Now let&rsquo;s install Nginx. Let&rsquo;s add the repository of Nginx by typing following command,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo apt-add-repository ppa:nginx/stable
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we need to invoke <code>sudo apt-get update</code> again since we added a new software source.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo apt-get update
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now let&rsquo;s install Nginx by invoking,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo apt-get install nginx
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Let&rsquo;s check Nginx status by typing</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo service nginx status
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If it&rsquo;s not running, we can start it by running following command,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo service nginx start
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Install Unicorn</h2>
+
+<p>Now we need to install unicorn if you haven&rsquo;t done so.</p>
+
+<p>Add <code>gem 'unicorn'</code> in your <strong>Gemfile</strong> and run <code>bundle install</code>.</p>
+
+<p>And after that you can run <code>unicorn_rails</code> to start it. The default port of unicorn is 8080.</p>
+
+<p>And then create unicorn config file <strong>config/unicorn.rb</strong> which has following contents,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">working_directory</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">&quot;../..&quot;</span><span class="p">,</span> <span class="bp">__FILE__</span><span class="p">)</span>
+</span><span class='line'><span class="n">worker_processes</span> <span class="mi">5</span>
+</span><span class='line'><span class="n">listen</span> <span class="s2">&quot;/tmp/unicorn.sock&quot;</span>
+</span><span class='line'><span class="n">timeout</span> <span class="mi">30</span>
+</span><span class='line'><span class="n">pid</span> <span class="s2">&quot;/tmp/unicorn_xhoppe.pid&quot;</span>
+</span><span class='line'><span class="n">stdout_path</span> <span class="s2">&quot;/data/xhoppe/log/unicorn.log&quot;</span>
+</span><span class='line'><span class="n">stderr_path</span> <span class="s2">&quot;/data/xhoppe/log/unicorn.log&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here we set worker_processes to 5, and in the server our application will be at <strong>/data/xhoppe</strong>. And the stdout_path and stderr_path are set to <strong>/data/xhoppe/log/unicorn.log</strong>.</p>
+
+<h2>Install Postgresql</h2>
+
+<p>Now let&rsquo;s install Postgresql.</p>
+
+<p>I want to install Postgresql 9.3 but the Postgresql version in default repository is 9.1. So we install Postgresql 9.3 by typing following commands, <a href="http://wiki.postgresql.org/wiki/Apt">refer here</a></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo apt-get install wget ca-certificates
+</span><span class='line'>wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+</span><span class='line'>sudo apt-get update
+</span><span class='line'>sudo apt-get upgrade
+</span><span class='line'>sudo apt-get install postgresql-9.3 pgadmin3 libpq-dev
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now let&rsquo;s create a Postgresql role, open psql by running <code>sudo su -c psql postgres</code> and type following commands,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>create role xhoppe with password 'xhoppe_secret';
+</span><span class='line'>alter role xhoppe createdb;
+</span><span class='line'>alter role xhoppe WITH LOGIN;</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Nginx config file</h2>
+
+<p>And then update the <strong>/etc/nginx/sites-enabled/default</strong> file,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>upstream unicorn {
+</span><span class='line'> server unix:/tmp/unicorn.sock fail_timeout=0;
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>server {
+</span><span class='line'>  listen 80 default_server;
+</span><span class='line'>
+</span><span class='line'>  root /data/xhoppe/public;
+</span><span class='line'>
+</span><span class='line'>  error_page 404 /data/xhoppe/public/404.html;
+</span><span class='line'>  error_page 500 502 503 504 /data/xhoppe/public/500.html;
+</span><span class='line'>
+</span><span class='line'>  location / {
+</span><span class='line'>    try_files $uri/index.html $uri @unicorn;
+</span><span class='line'>  }
+</span><span class='line'>
+</span><span class='line'>  location @unicorn {
+</span><span class='line'>    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+</span><span class='line'>    proxy_set_header Host $http_host;
+</span><span class='line'>    proxy_redirect off;
+</span><span class='line'>    proxy_pass http://unicorn;
+</span><span class='line'>  }
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The upstream unicorn matches the <code>listen "/tmp/unicorn.sock"</code> in config/unicorn.rb</p>
+
+<p>After that, we need to run <code>service nginx restart</code> to restart nginx.</p>
+
+<h2>Clone project</h2>
+
+<p>Now we use git clone to clone our project in <strong>/data/xhoppe</strong></p>
+
+<p>First we define a <strong>/data/xhoppe/env.sh</strong> which defines some environments,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>XHOPPE_DATABASE_PASSWORD=secret
+</span><span class='line'>export XHOPPE_DATABASE_PASSWORD
+</span><span class='line'>
+</span><span class='line'>SECRET_KEY_BASE=9a5a0316a...
+</span><span class='line'>export SECRET_KEY_BASE</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <strong>XHOPPE_DATABASE_PASSWORD</strong> is the production database&rsquo;s password. And the SECRET_KEY_BASE is for rails session, which is generated by running <code>rake secret</code>.</p>
+
+<p>After that we can run <code>source env.sh</code> to set these environment variables.</p>
+
+<h2>Running the project.</h2>
+
+<p>Now we can run the project by running</p>
+
+<p><code>unicorn -c config/unicorn.rb -E production -D</code></p>
+
+<p>Now we can access the website from our browser.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2068,6 +2392,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server/">Depoly a Rails 4 Application on an Amazon EC2 Server</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/08/26/digging-rails-how-rails-initializes-itself-part-2/">Digging Rails : How Rails Initializes Itself Part 2</a>
       </li>
     
@@ -2081,10 +2409,6 @@
     
       <li class="post">
         <a href="/blog/2014/05/26/integrate-postgis-and-google-maps-in-rails-part-2/">Integrate PostGIS and Google Maps in Rails Part 2</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/05/18/postgis-and-google-maps-in-rails-part-1/">PostGIS and Google Maps in Rails Part 1</a>
       </li>
     
   </ul>
