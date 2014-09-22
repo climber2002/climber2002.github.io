@@ -1,0 +1,392 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Capybara Integration Tests With JQuery Selectize - AprilTouch</title>
+  <meta name="author" content="Andy Wang">
+
+  
+  <meta name="description" content="Recently in one of my projects I utilized a popular JQuery plugin called Selectize. And I need to do Integration tests by using Capybara. Here is how &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://climber2002.github.io/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="AprilTouch" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/libs/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-51109944-1']);
+    _gaq.push(['_setDomainName','github.io']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">AprilTouch</a></h1>
+  
+    <h2>My blog about Ruby and iOS development</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:climber2002.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Capybara Integration Tests With JQuery Selectize</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-22T22:30:13+09:30" pubdate data-updated="true">Sep 22<span>nd</span>, 2014</time>
+        
+           | <a href="#disqus_thread"
+             data-disqus-identifier="http://climber2002.github.io">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Recently in one of my projects I utilized a popular JQuery plugin called <a href="http://brianreavis.github.io/selectize.js/">Selectize</a>. And I need to do Integration tests by using Capybara. Here is how to simulate some general events of Selectize.</p>
+
+<p>Firstly I use poltergeist Javascript driver, so in my <strong>rails_helper.rb</strong> it has following configurations,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">Capybara</span><span class="o">.</span><span class="n">javascript_driver</span> <span class="o">=</span> <span class="ss">:poltergeist</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Capybara</span><span class="o">.</span><span class="n">configure</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">match</span> <span class="o">=</span> <span class="ss">:prefer_exact</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">ignore_hidden_elements</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img src="/images/selectize.png"></p>
+
+<p>When a input box is selectized like the figure above, we can check it generates following DOM structure in our HTML,</p>
+
+<p> <img src="/images/selectize_code.png"></p>
+
+<p> The input &lsquo;#properties-input&rsquo; is our original input, it&rsquo;s set &lsquo;display: none&rsquo; css property, and Selectize replaces it with another input, and the &lsquo;div.item&rsquo; contains the items that we already selected, the &lsquo;div.selectize-dropdown&rsquo; is shown as a dropdown when we click the input and lets us to choose another item.</p>
+
+<p> So if we needs to select an item, we could do like this,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">within</span><span class="p">(</span><span class="ss">:xpath</span><span class="p">,</span> <span class="s2">&quot;//input[@id=&#39;properties-input&#39;]/..&quot;</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">first</span><span class="p">(</span><span class="s1">&#39;div.selectize-input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span>
+</span><span class='line'>  <span class="n">find</span><span class="p">(</span><span class="s1">&#39;div.option&#39;</span><span class="p">,</span> <span class="ss">:text</span> <span class="o">=&gt;</span> <span class="s1">&#39;Screen Size&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here I use a xpath to find the parent of the input box that we selectized, and then within this parent we click the &lsquo;div.selectize-input&rsquo;, and the dropdown will show and we run <code>find('div.option', :text =&gt; 'Screen Size').click</code> to click the item that contains the text &lsquo;Screen Size&rsquo;.</p>
+
+<p>Selectize also provides Ajax support, when you type something in the input, it could send Ajax requests to server to populate the items. So here we simulate the input,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">within</span><span class="p">(</span><span class="ss">:xpath</span><span class="p">,</span> <span class="s2">&quot;//input[@id=&#39;properties-input&#39;]/..&quot;</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">first</span><span class="p">(</span><span class="s1">&#39;div.selectize-input input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;u&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is to simulate input a &lsquo;u&rsquo; character in the input, and if you configure the <strong>load</strong> option, it will send a Ajax request to the server to populate the items.</p>
+
+<p>I&rsquo;ve created a <strong>SelectizeHelpers</strong> class to simulate some common events,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">SelectizeHelpers</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">selectize_click</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">selectize_within</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">first</span><span class="p">(</span><span class="s1">&#39;div.selectize-input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">select_option</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">selectize_within</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">first</span><span class="p">(</span><span class="s1">&#39;div.selectize-input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span>
+</span><span class='line'>      <span class="n">find</span><span class="p">(</span><span class="s1">&#39;div.option&#39;</span><span class="p">,</span> <span class="ss">:text</span> <span class="o">=&gt;</span> <span class="n">text</span><span class="p">)</span><span class="o">.</span><span class="n">click</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">set_text</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">selectize_within</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">first</span><span class="p">(</span><span class="s1">&#39;div.selectize-input input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">selectize_within</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">within</span><span class="p">(</span><span class="ss">:xpath</span><span class="p">,</span> <span class="s2">&quot;//input[@id=&#39;</span><span class="si">#{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39;]/..&quot;</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="k">yield</span> <span class="k">if</span> <span class="nb">block_given?</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">RSpec</span><span class="o">.</span><span class="n">configure</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">include</span> <span class="no">SelectizeHelpers</span><span class="p">,</span> <span class="ss">:type</span> <span class="o">=&gt;</span> <span class="ss">:feature</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>selectize_click(id)</code> is to click the selectize input, the <code>select_option</code> is to select an option whose text matches the <strong>text</strong>. And <code>set_text</code> is to set some text in the input.</p>
+
+<p>For the methods above, the <strong>id</strong> we should pass the id of the input that we apply the selectize.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Andy Wang</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-09-22T22:30:13+09:30" pubdate data-updated="true">Sep 22<span>nd</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/capybara/'>capybara</a>, <a class='category' href='/blog/categories/rails/'>rails</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://climber2002.github.io/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize/" data-via="" data-counturl="http://climber2002.github.io/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server/" title="Previous Post: Depoly a rails 4 application on an Amazon EC2 server">&laquo; Depoly a rails 4 application on an Amazon EC2 server</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize/">Capybara Integration Tests With JQuery Selectize</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server/">Depoly a Rails 4 Application on an Amazon EC2 Server</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/08/26/digging-rails-how-rails-initializes-itself-part-2/">Digging Rails : How Rails Initializes Itself Part 2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/08/24/digging-rails-how-rails-initializes-itself/">Digging Rails - How Rails Initializes Itself</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/">Using Index Files in Rails 4 Assets Pipeline</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 - Andy Wang -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'climber2002';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://climber2002.github.io/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize/';
+        var disqus_url = 'http://climber2002.github.io/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = '//platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

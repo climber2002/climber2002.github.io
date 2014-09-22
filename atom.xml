@@ -4,7 +4,7 @@
   <title><![CDATA[AprilTouch]]></title>
   <link href="http://climber2002.github.io/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2014-09-14T22:45:29+09:30</updated>
+  <updated>2014-09-22T23:02:03+09:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -12,6 +12,141 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Capybara Integration Tests With JQuery Selectize]]></title>
+    <link href="http://climber2002.github.io/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize/"/>
+    <updated>2014-09-22T22:30:13+09:30</updated>
+    <id>http://climber2002.github.io/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize</id>
+    <content type="html"><![CDATA[<p>Recently in one of my projects I utilized a popular JQuery plugin called <a href="http://brianreavis.github.io/selectize.js/">Selectize</a>. And I need to do Integration tests by using Capybara. Here is how to simulate some general events of Selectize.</p>
+
+<p>Firstly I use poltergeist Javascript driver, so in my <strong>rails_helper.rb</strong> it has following configurations,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">Capybara</span><span class="o">.</span><span class="n">javascript_driver</span> <span class="o">=</span> <span class="ss">:poltergeist</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Capybara</span><span class="o">.</span><span class="n">configure</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">match</span> <span class="o">=</span> <span class="ss">:prefer_exact</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">ignore_hidden_elements</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img src="http://climber2002.github.io/images/selectize.png"></p>
+
+<p>When a input box is selectized like the figure above, we can check it generates following DOM structure in our HTML,</p>
+
+<p> <img src="http://climber2002.github.io/images/selectize_code.png"></p>
+
+<p> The input &lsquo;#properties-input&rsquo; is our original input, it&rsquo;s set &lsquo;display: none&rsquo; css property, and Selectize replaces it with another input, and the &lsquo;div.item&rsquo; contains the items that we already selected, the &lsquo;div.selectize-dropdown&rsquo; is shown as a dropdown when we click the input and lets us to choose another item.</p>
+
+<p> So if we needs to select an item, we could do like this,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">within</span><span class="p">(</span><span class="ss">:xpath</span><span class="p">,</span> <span class="s2">&quot;//input[@id=&#39;properties-input&#39;]/..&quot;</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">first</span><span class="p">(</span><span class="s1">&#39;div.selectize-input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span>
+</span><span class='line'>  <span class="n">find</span><span class="p">(</span><span class="s1">&#39;div.option&#39;</span><span class="p">,</span> <span class="ss">:text</span> <span class="o">=&gt;</span> <span class="s1">&#39;Screen Size&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here I use a xpath to find the parent of the input box that we selectized, and then within this parent we click the &lsquo;div.selectize-input&rsquo;, and the dropdown will show and we run <code>find('div.option', :text =&gt; 'Screen Size').click</code> to click the item that contains the text &lsquo;Screen Size&rsquo;.</p>
+
+<p>Selectize also provides Ajax support, when you type something in the input, it could send Ajax requests to server to populate the items. So here we simulate the input,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">within</span><span class="p">(</span><span class="ss">:xpath</span><span class="p">,</span> <span class="s2">&quot;//input[@id=&#39;properties-input&#39;]/..&quot;</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">first</span><span class="p">(</span><span class="s1">&#39;div.selectize-input input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;u&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is to simulate input a &lsquo;u&rsquo; character in the input, and if you configure the <strong>load</strong> option, it will send a Ajax request to the server to populate the items.</p>
+
+<p>I&rsquo;ve created a <strong>SelectizeHelpers</strong> class to simulate some common events,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">SelectizeHelpers</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">selectize_click</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">selectize_within</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">first</span><span class="p">(</span><span class="s1">&#39;div.selectize-input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">select_option</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">selectize_within</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">first</span><span class="p">(</span><span class="s1">&#39;div.selectize-input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span>
+</span><span class='line'>      <span class="n">find</span><span class="p">(</span><span class="s1">&#39;div.option&#39;</span><span class="p">,</span> <span class="ss">:text</span> <span class="o">=&gt;</span> <span class="n">text</span><span class="p">)</span><span class="o">.</span><span class="n">click</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">set_text</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">selectize_within</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">first</span><span class="p">(</span><span class="s1">&#39;div.selectize-input input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">selectize_within</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">within</span><span class="p">(</span><span class="ss">:xpath</span><span class="p">,</span> <span class="s2">&quot;//input[@id=&#39;</span><span class="si">#{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39;]/..&quot;</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="k">yield</span> <span class="k">if</span> <span class="nb">block_given?</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">RSpec</span><span class="o">.</span><span class="n">configure</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">include</span> <span class="no">SelectizeHelpers</span><span class="p">,</span> <span class="ss">:type</span> <span class="o">=&gt;</span> <span class="ss">:feature</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <code>selectize_click(id)</code> is to click the selectize input, the <code>select_option</code> is to select an option whose text matches the <strong>text</strong>. And <code>set_text</code> is to set some text in the input.</p>
+
+<p>For the methods above, the <strong>id</strong> we should pass the id of the input that we apply the selectize.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Depoly a Rails 4 Application on an Amazon EC2 Server]]></title>
