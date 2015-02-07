@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Using Index Files in Rails 4 Assets Pipeline - AprilTouch</title>
+  <title>Install and Configure Postgresql on Ubuntu 14.04 - AprilTouch</title>
   <meta name="author" content="Andy Wang">
 
   
-  <meta name="description" content="Recently I bought a website template from WrapBootstrap and I wanna itegrate this into a Spree website I&rsquo;m working on. According to the &hellip;">
+  <meta name="description" content="PostgreSQL is a very popular database in Rails world. Here I describe how to install and configure it on Ubuntu 14.04 server. Install Using apt-get &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://climber2002.github.io/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline">
+  <link rel="canonical" href="http://climber2002.github.io/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="AprilTouch" type="application/atom+xml">
@@ -81,7 +81,7 @@
   
   <header>
     
-      <h1 class="entry-title">Using Index Files in Rails 4 Assets Pipeline</h1>
+      <h1 class="entry-title">Install and Configure Postgresql on Ubuntu 14.04</h1>
     
     
       <p class="meta">
@@ -97,7 +97,7 @@
   
 
 
-<time datetime="2014-08-17T21:15:28+09:30" pubdate data-updated="true">Aug 17<span>th</span>, 2014</time>
+<time datetime="2015-02-07T20:01:19+10:30" pubdate data-updated="true">Feb 7<span>th</span>, 2015</time>
         
            | <a href="#disqus_thread"
              data-disqus-identifier="http://climber2002.github.io">Comments</a>
@@ -107,13 +107,37 @@
   </header>
 
 
-<div class="entry-content"><p>Recently I bought a website template from <a href="https://wrapbootstrap.com/theme/tshop-responsive-e-commerce-template-WB002S263">WrapBootstrap</a> and I wanna itegrate this into a Spree website I&rsquo;m working on. According to the documents of <a href="http://edgeguides.rubyonrails.org/asset_pipeline.html">Asset Pipeline</a> and the <a href="http://railscasts.com/episodes/279-understanding-the-asset-pipeline">RailsCasts</a>. I put the stylesheets and javascripts of this template into the folder #{Rails.root}/vendor/assets/tshop. So for example, I can access a stylesheet at #{Rails.root}/vendor/assets/tshop/stylesheets/style.css from the url <a href="http://localhost:3000/assets/stylesheets/style.css">http://localhost:3000/assets/stylesheets/style.css</a></p>
+<div class="entry-content"><p><strong>PostgreSQL</strong> is a very popular database in Rails world. Here I describe how to install and configure it on Ubuntu 14.04 server.</p>
 
-<p>My folder structure is like following figure,</p>
+<h1>Install</h1>
 
-<p><img src="/images/rails_vendor_folder.png"></p>
+<p>Using apt-get to install PostgreSQL is very simple. Just execute the following two commands,</p>
 
-<p>According to the <a href="http://edgeguides.rubyonrails.org/asset_pipeline.html#using-index-files">Rails documents</a>, I should create a file index.js and index.css under #{Rails.root}/vendor/assets/tshop, but that doesn&rsquo;t work for me. Actually I named the files as tshop.js and tshop.css.scss, as the figure above. So in the application.css and application.js I chould load the tshop library by calling,</p>
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo apt-get update
+</span><span class='line'>sudo apt-get install postgresql postgresql-contrib
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here on my server it will install PostgreSQL 9.3.</p>
+
+<p>During the installation a user named &lsquo;postgres&rsquo; will be created automatically and this user is used to start postgresql.</p>
+
+<p>So we should change the password of user &lsquo;postgres&rsquo;.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>sudo passwd postgres
+</span><span class='line'>Enter new UNIX password:
+</span><span class='line'>Retype new UNIX password:
+</span><span class='line'>passwd: password updated successfully
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The installation will put configuration files in <strong>/etc/postgresql/9.3/main</strong> by default.</p>
 
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -121,62 +145,66 @@
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
 <span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="c">/*</span>
-</span><span class='line'><span class="c"> ...</span>
-</span><span class='line'><span class="c"> *= require tshop</span>
-</span><span class='line'><span class="c"> ...</span>
-</span><span class='line'><span class="c"> */</span>
-</span><span class='line'>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>vagrant@vagrant-ubuntu-trusty-64:/etc/postgresql/9.3/main<span class="nv">$ </span>ls -la
+</span><span class='line'>total 56
+</span><span class='line'>drwxr-xr-x 2 postgres postgres  4096 Feb  7 09:26 .
+</span><span class='line'>drwxr-xr-x 3 postgres postgres  4096 Feb  7 09:26 ..
+</span><span class='line'>-rw-r--r-- 1 postgres postgres   315 Feb  7 09:26 environment
+</span><span class='line'>-rw-r--r-- 1 postgres postgres   143 Feb  7 09:26 pg_ctl.conf
+</span><span class='line'>-rw-r----- 1 postgres postgres  4649 Feb  7 09:26 pg_hba.conf
+</span><span class='line'>-rw-r----- 1 postgres postgres  1636 Feb  7 09:26 pg_ident.conf
+</span><span class='line'>-rw-r--r-- 1 postgres postgres 20687 Feb  7 09:26 postgresql.conf
+</span><span class='line'>-rw-r--r-- 1 postgres postgres   378 Feb  7 09:26 start.conf
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p> and</p>
+<h1>Configure new data directory</h1>
+
+<p>Sometimes to improve performance, we want put postgres data files in its own disk. For example, we may mount a disk in folder <strong>/database</strong> and we want to put all postgres data file there. So let&rsquo;s do that.</p>
+
+<p>Suppose the <strong>/database</strong> folder already exists. We need to change its owner to postgres firstly.</p>
 
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'> <span class="c1">//= require tshop</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo chown -R postgres:postgres /database
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>And in the tshop.css.scss, I could load the file #{Rails.root}/vendor/assets/tshop/stylesheets/style.css by using following code,</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="c">/*</span>
-</span><span class='line'><span class="c"> ...</span>
-</span><span class='line'><span class="c"> *= require stylesheets/style</span>
-</span><span class='line'><span class="c"> ...</span>
-</span><span class='line'><span class="c"> */</span>
-</span><span class='line'>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p> And in tshop.js, the file #{Rails.root}/vendor/assets/tshop/javascripts/script.js could be loaded by following code,</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'> <span class="c1">//= require javascripts/script</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>In the templates, I need to change the background image url, for example, in style.css,</p>
+<p>Now we need to initialize this folder as a data folder</p>
 
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="nc">.parallax-image-2</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">background</span><span class="o">:</span> <span class="sx">url(&quot;/assets/stylesheets/parallax/people-collage.jpg&quot;)</span> <span class="k">fixed</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">background-attachment</span><span class="o">:</span> <span class="k">fixed</span><span class="p">;</span><span class="c">/* IE FIX */</span>
-</span><span class='line'><span class="p">}</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>su postgres
+</span><span class='line'><span class="nv">$ </span>/usr/lib/postgresql/9.3/bin/initdb -D /database
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>This image file will be in #{Rails.root}/vendor/assets/tshop/stylesheets/parallax/people-collage.jpg.</p>
+<p>We must su as postgres first since this user also owns the server process.</p>
 
-<p>Here are the organization I used for my Rails 4 application. The point is to use <em>library.css</em> and <em>library.js</em> to name the index files instead of index.css and index.js.</p>
+<p>Now let&rsquo;s stop server by running <strong>sudo service postgresql stop</strong>.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo service postgresql stop
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we need to update the file <strong>/etc/postgresql/9.3/main/postgresql.conf</strong>,</p>
+
+<p>change <strong>data_directory = &lsquo;/var/lib/postgresql/9.3/main&rsquo;</strong> to <strong>data_directory = &lsquo;/database&rsquo;</strong></p>
+
+<p>PS: You need to stop the server first before updating the data_directory location. Otherwise the stop will fail and you need to kill the process manually.</p>
+
+<p>After update the configuration file we need to restart postgresql server.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo service postgresql start
+</span></code></pre></td></tr></table></div></figure>
+
+
+
 </div>
 
 
@@ -199,7 +227,7 @@
   
 
 
-<time datetime="2014-08-17T21:15:28+09:30" pubdate data-updated="true">Aug 17<span>th</span>, 2014</time>
+<time datetime="2015-02-07T20:01:19+10:30" pubdate data-updated="true">Feb 7<span>th</span>, 2015</time>
       
 
 
@@ -207,7 +235,7 @@
     
       <div class="sharing">
   
-  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://climber2002.github.io/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/" data-via="" data-counturl="http://climber2002.github.io/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/" >Tweet</a>
+  <a href="//twitter.com/share" class="twitter-share-button" data-url="http://climber2002.github.io/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/" data-via="" data-counturl="http://climber2002.github.io/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/" >Tweet</a>
   
   
   
@@ -218,10 +246,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2014/05/26/integrate-postgis-and-google-maps-in-rails-part-2/" title="Previous Post: Integrate PostGIS and Google maps in Rails Part 2">&laquo; Integrate PostGIS and Google maps in Rails Part 2</a>
+        <a class="basic-alignment left" href="/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize/" title="Previous Post: Capybara integration tests with JQuery selectize">&laquo; Capybara integration tests with JQuery selectize</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2014/08/24/digging-rails-how-rails-initializes-itself/" title="Next Post: Digging Rails - How Rails initializes itself">Digging Rails - How Rails initializes itself &raquo;</a>
       
     </p>
   </footer>
@@ -287,8 +313,8 @@
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://climber2002.github.io/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/';
-        var disqus_url = 'http://climber2002.github.io/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/';
+        var disqus_identifier = 'http://climber2002.github.io/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/';
+        var disqus_url = 'http://climber2002.github.io/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/';
         var disqus_script = 'embed.js';
       
     (function () {
