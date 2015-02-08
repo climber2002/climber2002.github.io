@@ -4,7 +4,7 @@
   <title><![CDATA[AprilTouch]]></title>
   <link href="http://climber2002.github.io/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2015-02-07T21:16:02+10:30</updated>
+  <updated>2015-02-08T22:02:03+10:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -14,7 +14,7 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Install and Configure Postgresql on Ubuntu 14.04]]></title>
+    <title type="html"><![CDATA[Install and configure Postgresql on Ubuntu 14.04]]></title>
     <link href="http://climber2002.github.io/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/"/>
     <updated>2015-02-07T20:01:19+10:30</updated>
     <id>http://climber2002.github.io/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04</id>
@@ -120,7 +120,7 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Capybara Integration Tests With JQuery Selectize]]></title>
+    <title type="html"><![CDATA[Capybara integration tests with JQuery selectize]]></title>
     <link href="http://climber2002.github.io/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize/"/>
     <updated>2014-09-22T22:30:13+09:30</updated>
     <id>http://climber2002.github.io/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize</id>
@@ -255,7 +255,7 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Depoly a Rails 4 Application on an Amazon EC2 Server]]></title>
+    <title type="html"><![CDATA[Depoly a rails 4 application on an Amazon EC2 server]]></title>
     <link href="http://climber2002.github.io/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server/"/>
     <updated>2014-09-07T17:45:05+09:30</updated>
     <id>http://climber2002.github.io/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server</id>
@@ -549,7 +549,7 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Digging Rails : How Rails Initializes Itself Part 2]]></title>
+    <title type="html"><![CDATA[Digging Rails : How Rails initializes itself Part 2]]></title>
     <link href="http://climber2002.github.io/blog/2014/08/26/digging-rails-how-rails-initializes-itself-part-2/"/>
     <updated>2014-08-26T19:51:23+09:30</updated>
     <id>http://climber2002.github.io/blog/2014/08/26/digging-rails-how-rails-initializes-itself-part-2</id>
@@ -1071,7 +1071,7 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Digging Rails - How Rails Initializes Itself]]></title>
+    <title type="html"><![CDATA[Digging Rails - How Rails initializes itself]]></title>
     <link href="http://climber2002.github.io/blog/2014/08/24/digging-rails-how-rails-initializes-itself/"/>
     <updated>2014-08-24T17:35:26+09:30</updated>
     <id>http://climber2002.github.io/blog/2014/08/24/digging-rails-how-rails-initializes-itself</id>
@@ -1762,7 +1762,7 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Integrate PostGIS and Google Maps in Rails Part 2]]></title>
+    <title type="html"><![CDATA[Integrate PostGIS and Google maps in Rails Part 2]]></title>
     <link href="http://climber2002.github.io/blog/2014/05/26/integrate-postgis-and-google-maps-in-rails-part-2/"/>
     <updated>2014-05-26T00:19:16+09:30</updated>
     <id>http://climber2002.github.io/blog/2014/05/26/integrate-postgis-and-google-maps-in-rails-part-2</id>
@@ -2450,7 +2450,7 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Create Development Environment for PostgreSQL on Mavericks]]></title>
+    <title type="html"><![CDATA[Create Development Environment For PostgreSQL on Mavericks]]></title>
     <link href="http://climber2002.github.io/blog/2013/12/09/create-development-environment-for-postgresql-on-mavericks/"/>
     <updated>2013-12-09T01:10:04+10:30</updated>
     <id>http://climber2002.github.io/blog/2013/12/09/create-development-environment-for-postgresql-on-mavericks</id>
@@ -2609,7 +2609,7 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[My First Post]]></title>
+    <title type="html"><![CDATA[My first post]]></title>
     <link href="http://climber2002.github.io/blog/2013/12/02/my-first-post/"/>
     <updated>2013-12-02T02:29:57+10:30</updated>
     <id>http://climber2002.github.io/blog/2013/12/02/my-first-post</id>

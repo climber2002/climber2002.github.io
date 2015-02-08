@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Rails | AprilTouch]]></title>
   <link href="http://climber2002.github.io/blog/categories/rails/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2015-02-07T21:16:02+10:30</updated>
+  <updated>2015-02-08T22:02:03+10:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -14,7 +14,7 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Digging Rails - How Rails Initializes Itself]]></title>
+    <title type="html"><![CDATA[Digging Rails - How Rails initializes itself]]></title>
     <link href="http://climber2002.github.io/blog/2014/08/24/digging-rails-how-rails-initializes-itself/"/>
     <updated>2014-08-24T17:35:26+09:30</updated>
     <id>http://climber2002.github.io/blog/2014/08/24/digging-rails-how-rails-initializes-itself</id>
