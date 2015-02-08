@@ -9,7 +9,7 @@
   <meta name="author" content="Andy Wang">
 
   
-  <meta name="description" content="PostgreSQL is a very popular database in Rails world. Here I describe how to install and configure it on Ubuntu 14.04 server. Install Using apt-get &hellip;">
+  <meta name="description" content="In one of my previous post I described how to do the deployment manually on an Amazon EC2 server. And in this new series of posts I want to introduce &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -76,6 +76,245 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/02/08/deploy-rails-application-on-ubuntu-14-dot-04/">Deploy Rails Application on Ubuntu 14.04 Part 1</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-02-08T22:03:52+10:30" pubdate data-updated="true">Feb 8<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/02/08/deploy-rails-application-on-ubuntu-14-dot-04/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>In <a href="http://climber2002.github.io/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server/">one of my previous post</a> I described how to do the deployment manually on an Amazon EC2 server. And in this new series of posts I want to introduce how to deploy a Ruby on Rails 4.2 application on a Ubuntu 14.04 server from start to finish. I know there are lots of tutorials on the internet and even several books on deploying rails, however they are either outdated or not very clear how to do the deployment step by step. So in this series I will try to describe as clear as possible for each step.</p>
+
+<p>In this first part I will describe how to install the web server and database. Here I will use Nginx, Unicorn and PostgreSQL.</p>
+
+<h1>Application</h1>
+
+<p>To demonstrate the deployment, I will create a sample Rails 4.2 application called deploy_sample.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>rails _4.2_ new deploy_sample -d postgresql
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And then I update the .gitignore file to exclude database.yml and secrets.yml from committing to repository.</p>
+
+<p>Add the following lines to .gitignore</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/config/database.yml
+</span><span class='line'>/config/secrets.yml</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And then we copy the database.yml and secrets.yml to an example yml so let&rsquo;s say if your colleagues need to work on this project, they could copy the example yml back and set their configurations.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>cp ./config/database.yml ./config/database.example.yml
+</span><span class='line'><span class="nv">$ </span>cp ./config/secrets.yml ./config/secrets.example.yml
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now let&rsquo;s init the git repository and commit our project.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git init
+</span><span class='line'><span class="nv">$ </span>git add .
+</span><span class='line'><span class="nv">$ </span>git commit -m <span class="s1">&#39;initial commit&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We will use github as our remote repository, so let&rsquo;s create a repository on github. And then follow its instructions, let&rsquo;s push the project.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>git remote add origin https://github.com/climber2002/deploy_sample.git
+</span><span class='line'>git push -u origin master
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After that if we refresh the repository on github, we could see the content that we have committed, like the following snapshot.</p>
+
+<p><img src="/images/deploy_sample_github.png"></p>
+
+<p>Now let&rsquo;s create some models, for simplicity I will just create a model called <strong>Article</strong> using scaffold.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>bundle <span class="nb">exec </span>rails generate scaffold Article title content:text
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can run the migrations and test the application is ok from accessing *<a href="http://localhost:3000*">http://localhost:3000*</a></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>bundle <span class="nb">exec </span>rake db:create
+</span><span class='line'>bundle <span class="nb">exec </span>rake db:migrate
+</span><span class='line'>bundle <span class="nb">exec </span>rails s
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After we can commit our changes,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>git add .
+</span><span class='line'>git commit -m <span class="s1">&#39;add Article scaffold&#39;</span>
+</span><span class='line'>git push origin master
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now this sample application will be used for our deployment</p>
+
+<h1>Vagrant</h1>
+
+<p>For demonstration I will use Vagrant to create a VM. But it should apply to any VPS too. Firstly you should install VirtualBox and Vagrant. The installation should be straight forward.</p>
+
+<p>Then we create an empty folder in <strong>~/Sites</strong> and init the Vagrant.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>mkdir ~/Sites/deploy_sample_vagrant
+</span><span class='line'><span class="nb">cd</span> ~/Sites/deploy_sample_vagrant/
+</span><span class='line'>vagrant init <span class="s1">&#39;ubuntu/trusty64&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The vagrant init command creates a new file called Vagantfile. This file is configured to use Ubuntu 14.04 LTS server, codenamed “trusty”.</p>
+
+<p>And I want to assign this VM a private IP address, so we can access it from host server later. So open the Vagrantfile and add the following line.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>config.vm.network "private_network", ip: "192.168.22.10"</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It assigns the IP address &ldquo;192.168.22.10&rdquo; to the VM. Later we can see that we can access the nginx by using this IP address.</p>
+
+<p>Now in this folder we could type <strong>vagrant up</strong> to start the VM. If it&rsquo;s the first time it will take some time as it needs to download the VM image from the internet.</p>
+
+<p>After the VM is up, we could type <strong>vagrant ssh</strong> to ssh into the VM. Notice the prompt will change. If you are not sure whether you are in host server or the VM, just check the prompt.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>vagrant@vagrant-ubuntu-trusty-64:~$</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>Install Basic Software</h1>
+
+<p>After our VM is up we could install some basic software.</p>
+
+<p>So in the VM, we type following commands,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo apt-get -y update
+</span><span class='line'>sudo apt-get -y install curl wget unzip git ack-grep htop vim tmux software-properties-common
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h1>Nginx</h1>
+
+<p>Now let&rsquo;s install Nginx. As the default Nginx distribution may be out of date, let&rsquo;s add Nginx repository and install it.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo add-apt-repository ppa:nginx/stable
+</span><span class='line'>sudo apt-get -y update
+</span><span class='line'>sudo apt-get -y install nginx
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After installation Nginx should start automatically. We could check its status by executing <strong>sudo service nginx status</strong>. And we could also access **<a href="http://192.168.22.10**">http://192.168.22.10**</a> from our browser.</p>
+
+<p><img src="/images/nginx.png"></p>
+
+<h1>PostgreSQL</h1>
+
+<p>Now let&rsquo;s install PostgreSQL. And again we add another repository.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo add-apt-repository ppa:pitti/postgresql
+</span><span class='line'>sudo apt-get -y update
+</span><span class='line'>sudo apt-get -y install postgresql libpq-dev
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The libpq-dev library is needed for building the &lsquo;pg&rsquo; rubygem.</p>
+
+<p>Installing PostgreSQL will create a user named &lsquo;postgres&rsquo;. This user is the owner of PostgreSQL.</p>
+
+<p>Let&rsquo;s create a password for postgres.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>sudo passwd postgres
+</span><span class='line'>Enter new UNIX password:
+</span><span class='line'>Retype new UNIX password:
+</span><span class='line'>passwd: password updated successfully
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In PostgreSQL the user is represented by a Role. Now let&rsquo;s create a role named <em>deploy_sample</em>.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>sudo -u postgres psql
+</span><span class='line'>
+</span><span class='line'><span class="nv">postgres</span><span class="o">=</span><span class="c"># create user deploy_sample with password &#39;secret&#39;;</span>
+</span><span class='line'>CREATE ROLE
+</span><span class='line'><span class="nv">postgres</span><span class="o">=</span><span class="c"># create database deploy_sample_production owner deploy_sample;</span>
+</span><span class='line'>CREATE DATABASE
+</span><span class='line'><span class="nv">postgres</span><span class="o">=</span><span class="c"># \q</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The above lines will create a user <em>deploy_sample</em> and a database <em>deploy_sample_production</em> and set deploy_sample as its owner. The last command <em>\q</em> is to exit psql.</p>
+
+<p>Now</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2628,47 +2867,9 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/12/02/my-first-post/">My First Post</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-12-02T02:29:57+10:30" pubdate data-updated="true">Dec 2<span>nd</span>, 2013</time>
-        
-         | <a href="/blog/2013/12/02/my-first-post/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>My name is Andy Wang and this is my personal blog. I&rsquo;ll try to blog about my experience on Ruby and iOS programming. Hello world!</p>
-
-<p>This site is generated by <a href="http://octopress.org/">Octopress</a></p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
+    
+      <a class="prev" href="/blog/page/2/">&larr; Older</a>
     
     <a href="/blog/archives">Blog Archives</a>
     
@@ -2679,6 +2880,10 @@
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/02/08/deploy-rails-application-on-ubuntu-14-dot-04/">Deploy Rails application on Ubuntu 14.04 Part 1</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/">Install and configure Postgresql on Ubuntu 14.04</a>
@@ -2694,10 +2899,6 @@
     
       <li class="post">
         <a href="/blog/2014/08/26/digging-rails-how-rails-initializes-itself-part-2/">Digging Rails : How Rails initializes itself Part 2</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/08/24/digging-rails-how-rails-initializes-itself/">Digging Rails - How Rails initializes itself</a>
       </li>
     
   </ul>

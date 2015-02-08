@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: postgresql | AprilTouch]]></title>
-  <link href="http://climber2002.github.io/blog/categories/postgresql/atom.xml" rel="self"/>
+  <title><![CDATA[Category: capistrano | AprilTouch]]></title>
+  <link href="http://climber2002.github.io/blog/categories/capistrano/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
   <updated>2015-02-08T23:26:24+10:30</updated>
   <id>http://climber2002.github.io/</id>
@@ -260,106 +260,6 @@
 <p>The above lines will create a user <em>deploy_sample</em> and a database <em>deploy_sample_production</em> and set deploy_sample as its owner. The last command <em>\q</em> is to exit psql.</p>
 
 <p>Now</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Create Development Environment For PostgreSQL on Mavericks]]></title>
-    <link href="http://climber2002.github.io/blog/2013/12/09/create-development-environment-for-postgresql-on-mavericks/"/>
-    <updated>2013-12-09T01:10:04+10:30</updated>
-    <id>http://climber2002.github.io/blog/2013/12/09/create-development-environment-for-postgresql-on-mavericks</id>
-    <content type="html"><![CDATA[<p>Recently I bought a new MacBook Pro Retina with Mevericks installed. And here are the steps that I configure the development environment for PostgreSQL on this OS for my Ruby on Rails projects.</p>
-
-<h2>Download Postgres App</h2>
-
-<p>Download the Postgres App <a href="http://postgresapp.com/">here</a>, which is the quickest way to install PostgreSQL on Mac OS. My version is the latest version Postgres93.</p>
-
-<h2>Install XCode command line tools</h2>
-
-<p>Install XCode, and in the menu XCode &ndash;> &lsquo;Open Developer Tool&rsquo; &ndash;> &lsquo;More Developer Tool&rsquo;, Choose the &lsquo;Command Line Tools(OS X Mavericks) for Xcode&rsquo;, download the dmg file and install it.</p>
-
-<h2>Install pg gem</h2>
-
-<p>Install the pg gem with the following command,
-<code>
-gem install pg -- --with-pg-config=/Applications/Postgres93.app/Contents/MacOS/bin/pg_config
-</code>
-Notice the &mdash;with-pg-config params, otherwise you may get the following errors,</p>
-
-<p>```
-Building native extensions.  This could take a while&hellip;
-ERROR:  Error installing pg:
-  ERROR: Failed to build gem native extension.</p>
-
-<pre><code>/Users/andywang/.rvm/rubies/ruby-2.0.0-p353/bin/ruby extconf.rb
-</code></pre>
-
-<p>checking for pg_config&hellip; no
-No pg_config&hellip; trying anyway. If building fails, please try again with
- &mdash;with-pg-config=/path/to/pg_config
-checking for libpq-fe.h&hellip; no
-Can&rsquo;t find the &lsquo;libpq-fe.h header
-<strong><em> extconf.rb failed </em></strong>
-Could not create Makefile due to some reason, probably lack of necessary
-libraries and/or headers.  Check the mkmf.log file for more details.  You may
-need configuration options.</p>
-
-<p>Provided configuration options:
-  &mdash;with-opt-dir
-  &mdash;with-opt-include
-  &mdash;without-opt-include=${opt-dir}/include
-  &mdash;with-opt-lib
-  &mdash;without-opt-lib=${opt-dir}/lib
-  &mdash;with-make-prog
-  &mdash;without-make-prog
-  &mdash;srcdir=.
-  &mdash;curdir
-  &mdash;ruby=/Users/andywang/.rvm/rubies/ruby-2.0.0-p353/bin/ruby
-  &mdash;with-pg
-  &mdash;without-pg
-  &mdash;with-pg-config
-  &mdash;without-pg-config
-  &mdash;with-pg_config
-  &mdash;without-pg_config
-  &mdash;with-pg-dir
-  &mdash;without-pg-dir
-  &mdash;with-pg-include
-  &mdash;without-pg-include=${pg-dir}/include
-  &mdash;with-pg-lib
-  &mdash;without-pg-lib=${pg-dir}/</p>
-
-<p>Gem files will remain installed in /Users/andywang/.rvm/gems/ruby-2.0.0-p353/gems/pg-0.17.0 for inspection.
-Results logged to /Users/andywang/.rvm/gems/ruby-2.0.0-p353/gems/pg-0.17.0/ext/gem_make.out
-```</p>
-
-<h2>Create role in PostgreSQL</h2>
-
-<p>Normally I want to create a specific role in the database and don&rsquo;t like the anonymous access. So in my database.yml, I have the following snippets,
-<code>yml
-development:
-  adapter: postgresql
-  database: ebilling_development
-  host: localhost
-  pool: 5
-  timeout: 5000
-  username: ebilling
-  password: ebilling
-</code></p>
-
-<p>So here for this project I have a user ebilling whose password is also ebilling, so I created the ebilling user with the following command,
-<code>
-/Applications/Postgres93.app/Contents/MacOS/bin/createuser ebilling
-</code></p>
-
-<p>And then open the psql console, and assign the user as superuser and password
-<code>
-andywang=# alter user ebilling superuser password 'ebilling';
-</code></p>
-
-<p>Now after bundle install, you can create the database with the rake command,
-<code>
-rake db:create
-</code></p>
 ]]></content>
   </entry>
   
