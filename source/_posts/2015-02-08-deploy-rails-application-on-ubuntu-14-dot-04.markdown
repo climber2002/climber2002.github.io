@@ -135,7 +135,7 @@ sudo apt-get -y install nginx
 
 {% endcodeblock %}
 
-After installation Nginx should start automatically. We could check its status by executing **sudo service nginx status**. And we could also access **http://192.168.22.10** from our browser.
+After installation Nginx should start automatically. We could check its status by executing **sudo service nginx status**. And we could also access [http://192.168.22.10](http://192.168.22.10) from our browser.
 
 {% img /images/nginx.png %}
 
@@ -180,4 +180,19 @@ postgres=# \q
 
 The above lines will create a user *deploy_sample* and a database *deploy_sample_production* and set deploy_sample as its owner. The last command *\q* is to exit psql.
 
-Now 
+# Monit
+In next part we will use [capistrano template](https://github.com/TalkingQuickly/capistrano-3-rails-template) for our deployment. And in that template it will also deploy [Monit](http://mmonit.com/monit/). According to its official website, "Monit is a small Open Source utility for managing and monitoring Unix systems. Monit conducts automatic maintenance and repair and can execute meaningful causal actions in error situations."
+
+So let's also install that.
+
+{% codeblock lang:bash %}
+
+sudo apt-get -y install monit
+
+{% endcodeblock %}
+
+After installation we can run **sudo service monit status** to confirm that monit service is already started.
+
+# Summary
+In this part we setup a VM server and installed Nginx and PostgreSQL. In next part we will see how to deploy our rails app by using capistrano.
+
