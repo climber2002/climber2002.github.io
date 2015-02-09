@@ -250,7 +250,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>After installation Nginx should start automatically. We could check its status by executing <strong>sudo service nginx status</strong>. And we could also access **<a href="http://192.168.22.10**">http://192.168.22.10**</a> from our browser.</p>
+<p>After installation Nginx should start automatically. We could check its status by executing <strong>sudo service nginx status</strong>. And we could also access <a href="http://192.168.22.10">http://192.168.22.10</a> from our browser.</p>
 
 <p><img src="/images/nginx.png"></p>
 
@@ -305,7 +305,22 @@
 
 <p>The above lines will create a user <em>deploy_sample</em> and a database <em>deploy_sample_production</em> and set deploy_sample as its owner. The last command <em>\q</em> is to exit psql.</p>
 
-<p>Now</p>
+<h1>Monit</h1>
+
+<p>In next part we will use <a href="https://github.com/TalkingQuickly/capistrano-3-rails-template">capistrano template</a> for our deployment. And in that template it will also deploy <a href="http://mmonit.com/monit/">Monit</a>. According to its official website, &ldquo;Monit is a small Open Source utility for managing and monitoring Unix systems. Monit conducts automatic maintenance and repair and can execute meaningful causal actions in error situations.&rdquo;</p>
+
+<p>So let&rsquo;s also install that.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo apt-get -y install monit
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After installation we can run <strong>sudo service monit status</strong> to confirm that monit service is already started.</p>
+
+<h1>Summary</h1>
+
+<p>In this part we setup a VM server and installed Nginx and PostgreSQL. In next part we will see how to deploy our rails app by using capistrano.</p>
 </div>
 
 
