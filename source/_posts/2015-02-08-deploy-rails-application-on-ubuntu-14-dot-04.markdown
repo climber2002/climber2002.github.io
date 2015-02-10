@@ -12,7 +12,7 @@ In this first part I will describe how to install the web server and database. H
 
 
 # Application
-To demonstrate the deployment, I will create a sample Rails 4.2 application called deploy_sample. 
+To demonstrate the deployment, I will create a sample Rails 4.2 application called deploy_sample.
 
 {% codeblock lang:bash %}
 $ rails _4.2_ new deploy_sample -d postgresql
@@ -96,7 +96,7 @@ cd ~/Sites/deploy_sample_vagrant/
 vagrant init 'ubuntu/trusty64'
 {% endcodeblock %}
 
-The vagrant init command creates a new file called Vagantfile. This file is configured to use Ubuntu 14.04 LTS server, codenamed “trusty”. 
+The vagrant init command creates a new file called Vagantfile. This file is configured to use Ubuntu 14.04 LTS server, codenamed “trusty”.
 
 And I want to assign this VM a private IP address, so we can access it from host server later. So open the Vagrantfile and add the following line.
 
@@ -192,6 +192,15 @@ sudo apt-get -y install monit
 {% endcodeblock %}
 
 After installation we can run **sudo service monit status** to confirm that monit service is already started.
+
+# Nodejs
+We need a Javascript runtime so we are going to install Nodejs.
+
+{% codeblock lang:bash %}
+
+sudo apt-get -y install nodejs
+
+{% endcodeblock %}
 
 # Summary
 In this part we setup a VM server and installed Nginx and PostgreSQL. In next part we will see how to deploy our rails app by using capistrano.
