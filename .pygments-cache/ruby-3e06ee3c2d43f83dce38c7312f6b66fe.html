@@ -1,0 +1,37 @@
+<div class="highlight"><pre><span class="c1"># rails/railties/lib/rails/commands/commands_tasks.rb</span>
+
+<span class="k">module</span> <span class="nn">Rails</span>
+  <span class="k">class</span> <span class="nc">CommandsTasks</span>
+    <span class="kp">attr_reader</span> <span class="ss">:argv</span>
+
+    <span class="no">COMMAND_WHITELIST</span> <span class="o">=</span> <span class="sx">%w(plugin generate destroy console server dbconsole runner new version help)</span>
+
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+      <span class="vi">@argv</span> <span class="o">=</span> <span class="n">argv</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">run_command!</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+      <span class="n">command</span> <span class="o">=</span> <span class="n">parse_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+      <span class="k">if</span> <span class="no">COMMAND_WHITELIST</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+        <span class="nb">send</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+      <span class="k">else</span>
+        <span class="n">write_error_message</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="kp">private</span>
+
+      <span class="k">def</span> <span class="nf">parse_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+        <span class="k">case</span> <span class="n">command</span>
+        <span class="k">when</span> <span class="s1">&#39;--version&#39;</span><span class="p">,</span> <span class="s1">&#39;-v&#39;</span>
+          <span class="s1">&#39;version&#39;</span>
+        <span class="k">when</span> <span class="s1">&#39;--help&#39;</span><span class="p">,</span> <span class="s1">&#39;-h&#39;</span>
+          <span class="s1">&#39;help&#39;</span>
+        <span class="k">else</span>
+          <span class="n">command</span>
+        <span class="k">end</span>
+      <span class="k">end</span>
+
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>

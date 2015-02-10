@@ -1,0 +1,24 @@
+<div class="highlight"><pre><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;h1&gt;rails/</span><span class="n">railties</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">rails</span><span class="o">/</span><span class="n">all</span><span class="o">.</span><span class="n">rb</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;p&gt;require &amp;ldquo;rails&amp;rdquo;&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="sx">%w(</span>
+<span class="sx">  active_record</span>
+<span class="sx">  action_controller</span>
+<span class="sx">  action_view</span>
+<span class="sx">  action_mailer</span>
+<span class="sx">  active_job</span>
+<span class="sx">  rails/test_unit</span>
+<span class="sx">  sprockets</span>
+<span class="sx">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">framework</span><span class="o">|</span>
+  <span class="k">begin</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;pre&gt;&lt;code&gt;require &quot;</span><span class="si">#{</span><span class="n">framework</span><span class="si">}</span><span class="sr">/</span><span class="n">railtie</span><span class="s2">&quot;</span>
+<span class="s2">&lt;/code&gt;&lt;/pre&gt;</span>
+
+<span class="s2">&lt;p&gt;  rescue LoadError</span>
+<span class="s2">  end</span>
+<span class="s2">end</span>
+</pre></div>

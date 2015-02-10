@@ -1,0 +1,9 @@
+<div class="highlight"><pre><span class="c1">#!/usr/bin/env ruby</span>
+<span class="k">begin</span>
+  <span class="nb">load</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s2">&quot;../spring&quot;</span><span class="p">,</span> <span class="bp">__FILE__</span><span class="p">)</span>
+<span class="k">rescue</span> <span class="no">LoadError</span>
+<span class="k">end</span>
+<span class="no">APP_PATH</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s1">&#39;../../config/application&#39;</span><span class="p">,</span>  <span class="bp">__FILE__</span><span class="p">)</span>
+<span class="n">require_relative</span> <span class="s1">&#39;../config/boot&#39;</span>
+<span class="nb">require</span> <span class="s1">&#39;rails/commands&#39;</span>
+</pre></div>

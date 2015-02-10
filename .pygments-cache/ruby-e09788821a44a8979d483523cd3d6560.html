@@ -1,0 +1,18 @@
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">CreateCountries</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Migration</span>
+  <span class="k">def</span> <span class="nf">change</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;pre&gt;&lt;code&gt;create_table :countries do |t|</span>
+<span class="sr">  t.string :name, :unique =&amp;gt; true</span>
+<span class="sr">  t.string :iso_code, :unique =&amp;gt; true</span>
+<span class="sr">  t.multi_polygon :geom, :srid =&amp;gt; 4326</span>
+<span class="sr">  t.timestamps</span>
+<span class="sr">end</span>
+
+<span class="sr">change_table :countries do |t|</span>
+<span class="sr">  t.index :geom, :spatial =&amp;gt; true</span>
+<span class="sr">end</span>
+<span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+
+<span class="sr">&lt;p&gt;  end</span>
+<span class="sr">end</span>
+</pre></div>

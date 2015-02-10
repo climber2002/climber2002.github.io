@@ -1,0 +1,29 @@
+<div class="highlight"><pre><span class="n">set</span> <span class="ss">:stage</span><span class="p">,</span> <span class="ss">:production</span>
+<span class="n">set</span> <span class="ss">:branch</span><span class="p">,</span> <span class="s2">&quot;master&quot;</span>
+
+<span class="c1"># This is used in the Nginx VirtualHost to specify which domains</span>
+<span class="c1"># the app should appear on. If you don&#39;t yet have DNS setup, you&#39;ll</span>
+<span class="c1"># need to create entries in your local Hosts file for testing.</span>
+<span class="n">set</span> <span class="ss">:server_name</span><span class="p">,</span> <span class="s2">&quot;www.example.com example.com&quot;</span>
+
+<span class="c1"># used in case we&#39;re deploying multiple versions of the same</span>
+<span class="c1"># app side by side. Also provides quick sanity checks when looking</span>
+<span class="c1"># at filepaths</span>
+<span class="n">set</span> <span class="ss">:full_app_name</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="n">fetch</span><span class="p">(</span><span class="ss">:application</span><span class="p">)</span><span class="si">}</span><span class="s2">_</span><span class="si">#{</span><span class="n">fetch</span><span class="p">(</span><span class="ss">:stage</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<span class="n">server</span> <span class="s1">&#39;192.168.22.10&#39;</span><span class="p">,</span> <span class="ss">user</span><span class="p">:</span> <span class="s1">&#39;deploy&#39;</span><span class="p">,</span> <span class="ss">roles</span><span class="p">:</span> <span class="sx">%w{web app db}</span><span class="p">,</span> <span class="ss">primary</span><span class="p">:</span> <span class="kp">true</span>
+
+<span class="n">set</span> <span class="ss">:deploy_to</span><span class="p">,</span> <span class="s2">&quot;/product/</span><span class="si">#{</span><span class="n">fetch</span><span class="p">(</span><span class="ss">:full_app_name</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<span class="c1"># dont try and infer something as important as environment from</span>
+<span class="c1"># stage name.</span>
+<span class="n">set</span> <span class="ss">:rails_env</span><span class="p">,</span> <span class="ss">:production</span>
+
+<span class="c1"># number of unicorn workers, this will be reflected in</span>
+<span class="c1"># the unicorn.rb and the monit configs</span>
+<span class="n">set</span> <span class="ss">:unicorn_worker_count</span><span class="p">,</span> <span class="mi">5</span>
+
+<span class="c1"># whether we&#39;re using ssl or not, used for building nginx</span>
+<span class="c1"># config file</span>
+<span class="n">set</span> <span class="ss">:enable_ssl</span><span class="p">,</span> <span class="kp">false</span>
+</pre></div>

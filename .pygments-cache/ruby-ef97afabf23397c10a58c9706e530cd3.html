@@ -1,0 +1,36 @@
+<div class="highlight"><pre><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;h1&gt;config/</span><span class="n">application</span><span class="o">.</span><span class="n">rb</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;p&gt;require File.expand_path(&amp;lsquo;../</span><span class="n">boot</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;,</span> <span class="o">&lt;</span><span class="n">strong</span><span class="o">&gt;</span><span class="no">FILE</span><span class="o">&lt;</span><span class="sr">/strong&gt;)&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="nb">require</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">rails</span><span class="o">/</span><span class="n">all</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;h1&gt;Require the gems listed in Gemfile, including any gems&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">you</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="n">ve</span> <span class="n">limited</span> <span class="n">to</span> <span class="ss">:test</span><span class="p">,</span> <span class="ss">:development</span><span class="p">,</span> <span class="ow">or</span> <span class="ss">:production</span><span class="o">.</span><span class="n">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;p&gt;Bundler.require(*Rails.groups)&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="k">module</span> <span class="nn">Sample</span>
+  <span class="k">class</span> <span class="nc">Application</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="ss">Rails</span><span class="p">:</span><span class="ss">:Application</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;pre&gt;&lt;code&gt;# Settings in config/en</span><span class="n">vironments</span><span class="o">/*</span> <span class="n">take</span> <span class="n">precedence</span> <span class="n">over</span> <span class="n">those</span> <span class="n">specified</span> <span class="n">here</span><span class="o">.</span>
+<span class="c1"># Application configuration should go into files in config/initializers</span>
+<span class="c1"># -- all .rb files in that directory are automatically loaded.</span>
+
+<span class="c1"># Set Time.zone default to the specified zone and make Active Record auto-convert to this zone.</span>
+<span class="c1"># Run &quot;rake -D time&quot; for a list of tasks for finding time zone names. Default is UTC.</span>
+<span class="c1"># config.time_zone = &#39;Central Time (US &amp;amp; Canada)&#39;</span>
+
+<span class="c1"># The default locale is :en and all translations from config/locales/*.rb,yml are auto loaded.</span>
+<span class="c1"># config.i18n.load_path += Dir[Rails.root.join(&#39;my&#39;, &#39;locales&#39;, &#39;*.{rb,yml}&#39;).to_s]</span>
+<span class="c1"># config.i18n.default_locale = :de</span>
+
+<span class="c1"># For not swallow errors in after_commit/after_rollback callbacks.</span>
+<span class="n">config</span><span class="o">.</span><span class="n">active_record</span><span class="o">.</span><span class="n">raise_in_transactional_callbacks</span> <span class="o">=</span> <span class="kp">true</span>
+<span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>

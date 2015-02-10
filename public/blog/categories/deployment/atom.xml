@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: deployment | AprilTouch]]></title>
+  <link href="http://climber2002.github.io/blog/categories/deployment/atom.xml" rel="self"/>
+  <link href="http://climber2002.github.io/"/>
+  <updated>2015-02-10T16:18:13+10:30</updated>
+  <id>http://climber2002.github.io/</id>
+  <author>
+    <name><![CDATA[Andy Wang]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Depoly a rails 4 application on an Amazon EC2 server]]></title>
+    <link href="http://climber2002.github.io/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server/"/>
+    <updated>2014-09-07T17:45:05+09:30</updated>
+    <id>http://climber2002.github.io/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server</id>
+    <content type="html"><![CDATA[<p>In this blog I will list the steps needed to deploy a Rails 4 application on an Amazon EC2 server. The OS is Ubuntu Server 14.04 LTS, the database is Postgresql and the web server is Unicorn + Ngnix. Previously I mainly deploy the project on Engine Yard. But this time I need to deploy it on a server manually.</p>
+
+<h2>Updating And Preparing The Operating System</h2>
+
+<h3>Update the Operating System</h3>
+
+<p>Firstly we need to update our OS by running following command,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;sudo apt-get update&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h3>Change locale file</h3>
+
+<p>In some cases on my server it shows the following warnings,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>perl: warning: Setting locale failed. &lt;br/>
+</span><span class='line'>perl: warning: Please check that your locale settings:&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>    LANGUAGE = "en_US:en",   
+</span><span class='line'>    LC_ALL = (unset),   
+</span><span class='line'>    LC_MESSAGES = "en_US.UTF-8",   
+</span><span class='line'>    LANG = "en_US.UTF-8"   
+</span><span class='line'>are supported and installed on your system.
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The solution is to edit the <strong>/etc/default/locale</strong> and add the following contents,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>LC_ALL=en_US.UTF-8
+</span><span class='line'>LANG=en_US.UTF-8</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h3>Install the necessary packages</h3>
+
+<p>Next we need to install the following necessary packages by running,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;sudo apt-get install build-essential openssl libreadline6 libreadline6-dev zlib1g zlib1g-dev libssl-dev git-core python-software-properties nodejs libyaml-dev libsqlite3-dev sqlite3 libxml2-dev libxslt-dev autoconf libc6-dev ncurses-dev automake libtool bison pkg-config&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The <em>python-software-properties</em> allows us to easily manage your distribution and independent software vendor software sources. It will be useful when we install Postgresql and Nginx.</p>
+
+<p>The <em>nodejs</em> is a Javascript runtime for Rails.</p>
+
+<h2>Install rbenv</h2>
+
+<p>Now we need to install a Ruby runtime. I choose rbenv instead of rvm, which is more lightweight for production.</p>
+
+<p>Let&rsquo;s install rbenv by running the following command,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;curl &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;https://raw.githubusercontent.com/fesplugas/rbenv-installer/master/bin/rbenv-installer&quot;</span>&gt;https://raw.githubusercontent.com/fesplugas/rbenv-installer/master/bin/rbenv-installer&lt;/a&gt; | bash&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>After installation, following its instructions, add the following content at the top of ~/.bash_profile</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">export </span><span class="nv">RBENV_ROOT</span><span class="o">=</span>&amp;ldquo;<span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/.rbenv&amp;rdquo;&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;if <span class="o">[</span> -d &amp;ldquo;<span class="k">${</span><span class="nv">RBENV_ROOT</span><span class="k">}</span>&amp;rdquo; <span class="o">]</span>; <span class="k">then</span>
+</span><span class='line'><span class="k">  </span><span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span>&amp;ldquo;<span class="k">${</span><span class="nv">RBENV_ROOT</span><span class="k">}</span>/bin:<span class="k">${</span><span class="nv">PATH</span><span class="k">}</span>&amp;rdquo;
+</span><span class='line'>  <span class="nb">eval</span> &amp;ldquo;<span class="k">$(</span>rbenv init &amp;ndash;<span class="k">)</span>&amp;rdquo;
+</span><span class='line'><span class="k">fi</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>After that run <code>source ~/.bash_profile</code> to make the changed effective.</p>
+
+<p>Now we install Ruby 2.1.2 and make it global by running following commands,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>rbenv install 2.1.2 &amp;mdash;verbose
+</span><span class='line'>rbenv rehash
+</span><span class='line'>rbenv global 2.1.2
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The install could take a while so grab a cup of coffee.</p>
+
+<p>After Ruby 2.1.2 is installed, we can install bundler by typing,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;gem install bundler
+</span><span class='line'>rbenv rehash&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h2>Install Nginx</h2>
+
+<p>Now let&rsquo;s install Nginx. Let&rsquo;s add the repository of Nginx by typing following command,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;sudo apt-add-repository ppa:nginx/stable&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now we need to invoke <code>sudo apt-get update</code> again since we added a new software source.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;sudo apt-get update&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now let&rsquo;s install Nginx by invoking,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo apt-get install nginx
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Let&rsquo;s check Nginx status by typing</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo service nginx status
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>If it&rsquo;s not running, we can start it by running following command,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo service nginx start
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h2>Install Unicorn</h2>
+
+<p>Now we need to install unicorn if you haven&rsquo;t done so.</p>
+
+<p>Add <code>gem 'unicorn'</code> in your <strong>Gemfile</strong> and run <code>bundle install</code>.</p>
+
+<p>And after that you can run <code>unicorn_rails</code> to start it. The default port of unicorn is 8080.</p>
+
+<p>And then create unicorn config file <strong>config/unicorn.rb</strong> which has following contents,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">working_directory</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">.</span><span class="n">.</span><span class="o">/.</span><span class="n">.</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span> <span class="o">&lt;</span><span class="n">strong</span><span class="o">&gt;</span><span class="no">FILE</span><span class="o">&lt;</span><span class="sr">/strong&gt;)</span>
+</span><span class='line'><span class="sr">worker_processes 5</span>
+</span><span class='line'><span class="sr">listen &amp;ldquo;/</span><span class="n">tmp</span><span class="o">/</span><span class="n">unicorn</span><span class="o">.</span><span class="n">sock</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
+</span><span class='line'><span class="n">timeout</span> <span class="mi">30</span>
+</span><span class='line'><span class="n">pid</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">/</span><span class="n">tmp</span><span class="o">/</span><span class="n">unicorn_xhoppe</span><span class="o">.</span><span class="n">pid</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
+</span><span class='line'><span class="n">stdout_path</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">xhoppe</span><span class="o">/</span><span class="n">log</span><span class="o">/</span><span class="n">unicorn</span><span class="o">.</span><span class="n">log</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
+</span><span class='line'><span class="n">stderr_path</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="o">/</span><span class="n">data</span><span class="o">/</span><span class="n">xhoppe</span><span class="o">/</span><span class="n">log</span><span class="o">/</span><span class="n">unicorn</span><span class="o">.</span><span class="n">log</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Here we set worker_processes to 5, and in the server our application will be at <strong>/data/xhoppe</strong>. And the stdout_path and stderr_path are set to <strong>/data/xhoppe/log/unicorn.log</strong>.</p>
+
+<h2>Install Postgresql</h2>
+
+<p>Now let&rsquo;s install Postgresql.</p>
+
+<p>I want to install Postgresql 9.3 but the Postgresql version in default repository is 9.1. So we install Postgresql 9.3 by typing following commands, <a href="http://wiki.postgresql.org/wiki/Apt">refer here</a></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo apt-get install wget ca-certificates
+</span><span class='line'>wget &amp;mdash;quiet -O &amp;ndash; &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;https://www.postgresql.org/media/keys/ACCC4CF8.asc&quot;</span>&gt;https://www.postgresql.org/media/keys/ACCC4CF8.asc&lt;/a&gt; | sudo apt-key add &amp;ndash;
+</span><span class='line'>sudo apt-get update
+</span><span class='line'>sudo apt-get upgrade
+</span><span class='line'>sudo apt-get install postgresql-9.3 pgadmin3 libpq-dev
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now let&rsquo;s create a Postgresql role, open psql by running <code>sudo su -c psql postgres</code> and type following commands,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>create role xhoppe with password &lsquo;xhoppe_secret&rsquo;;
+</span><span class='line'>alter role xhoppe createdb;
+</span><span class='line'>alter role xhoppe WITH LOGIN;</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h2>Nginx config file</h2>
+
+<p>And then update the <strong>/etc/nginx/sites-enabled/default</strong> file,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>upstream unicorn {
+</span><span class='line'> server unix:/tmp/unicorn.sock fail_timeout=0;
+</span><span class='line'>}&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>server {
+</span><span class='line'>  listen 80 default_server;&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>  root /data/xhoppe/public;&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>  error_page 404 /data/xhoppe/public/404.html;
+</span><span class='line'>  error_page 500 502 503 504 /data/xhoppe/public/500.html;&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>  location / {&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>try_files $uri/index.html $uri @unicorn;
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p>  }&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>  location @unicorn {&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;pre>&lt;code>proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+</span><span class='line'>proxy_set_header Host $http_host;
+</span><span class='line'>proxy_redirect off;
+</span><span class='line'>proxy_pass http://unicorn;
+</span><span class='line'>&lt;/code>&lt;/pre>
+</span><span class='line'>
+</span><span class='line'>&lt;p>  }
+</span><span class='line'>}&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The upstream unicorn matches the <code>listen "/tmp/unicorn.sock"</code> in config/unicorn.rb</p>
+
+<p>After that, we need to run <code>service nginx restart</code> to restart nginx.</p>
+
+<h2>Clone project</h2>
+
+<p>Now we use git clone to clone our project in <strong>/data/xhoppe</strong></p>
+
+<p>First we define a <strong>/data/xhoppe/env.sh</strong> which defines some environments,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>XHOPPE_DATABASE_PASSWORD=secret
+</span><span class='line'>export XHOPPE_DATABASE_PASSWORD&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>SECRET_KEY_BASE=9a5a0316a&hellip;
+</span><span class='line'>export SECRET_KEY_BASE&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The <strong>XHOPPE_DATABASE_PASSWORD</strong> is the production database&rsquo;s password. And the SECRET_KEY_BASE is for rails session, which is generated by running <code>rake secret</code>.</p>
+
+<p>After that we can run <code>source env.sh</code> to set these environment variables.</p>
+
+<h2>Running the project.</h2>
+
+<p>Now we can run the project by running</p>
+
+<p><code>unicorn -c config/unicorn.rb -E production -D</code></p>
+
+<p>Now we can access the website from our browser.</p>
+]]></content>
+  </entry>
+  
+</feed>

@@ -1,0 +1,41 @@
+<div class="highlight"><pre><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;h1&gt;rails/</span><span class="n">railties</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">rails</span><span class="o">/</span><span class="n">commands</span><span class="o">/</span><span class="n">commands_tasks</span><span class="o">.</span><span class="n">rb</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;p&gt;module Rails</span>
+<span class="sr">  class CommandsTasks&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kp">attr_reader</span> <span class="ss">:argv</span>
+
+<span class="no">COMMAND_WHITELIST</span> <span class="o">=</span> <span class="sx">%w(plugin generate destroy console server dbconsole runner new version help)</span>
+
+<span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+  <span class="vi">@argv</span> <span class="o">=</span> <span class="n">argv</span>
+<span class="k">end</span>
+
+<span class="k">def</span> <span class="nf">run_command!</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+  <span class="n">command</span> <span class="o">=</span> <span class="n">parse_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+  <span class="k">if</span> <span class="no">COMMAND_WHITELIST</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+    <span class="nb">send</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+  <span class="k">else</span>
+    <span class="n">write_error_message</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="kp">private</span>
+
+  <span class="k">def</span> <span class="nf">parse_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+    <span class="k">case</span> <span class="n">command</span>
+    <span class="k">when</span> <span class="s1">&#39;--version&#39;</span><span class="p">,</span> <span class="s1">&#39;-v&#39;</span>
+      <span class="s1">&#39;version&#39;</span>
+    <span class="k">when</span> <span class="s1">&#39;--help&#39;</span><span class="p">,</span> <span class="s1">&#39;-h&#39;</span>
+      <span class="s1">&#39;help&#39;</span>
+    <span class="k">else</span>
+      <span class="n">command</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>

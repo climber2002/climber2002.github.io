@@ -1,0 +1,47 @@
+<div class="highlight"><pre><span class="k">module</span> <span class="nn">Rack</span>
+  <span class="k">class</span> <span class="nc">Server</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;pre&gt;&lt;code&gt;attr_writer :options</span>
+
+<span class="sr">def initialize(options = nil)</span>
+<span class="sr">  @options = options</span>
+<span class="sr">  @app = options[:app] if options &amp;amp;&amp;amp; options[:app]</span>
+<span class="sr">end</span>
+
+<span class="sr">def app</span>
+<span class="sr">  @app ||= options[:builder] ? build_app_from_string : build_app_and_options_from_config</span>
+<span class="sr">end</span>
+
+<span class="sr">def start &amp;amp;blk</span>
+<span class="sr">  # ...</span>
+
+<span class="sr">  server.run wrapped_app, options, &amp;amp;blk</span>
+<span class="sr">end</span>
+
+<span class="sr">def server</span>
+<span class="sr">  @_server ||= Rack::Handler.get(options[:server]) || Rack::Handler.default(options)</span>
+<span class="sr">end</span>
+
+<span class="sr">private</span>
+<span class="sr">  def build_app_and_options_from_config</span>
+<span class="sr">    if !::File.exist? options[:config]</span>
+<span class="sr">      abort &quot;configuration </span><span class="si">#{</span><span class="n">options</span><span class="o">[</span><span class="ss">:config</span><span class="o">]</span><span class="si">}</span><span class="sr"> not found&quot;</span>
+<span class="sr">    end</span>
+
+<span class="sr">    app, options = Rack::Builder.parse_file(self.options[:config], opt_parser)</span>
+<span class="sr">    self.options.merge! options</span>
+<span class="sr">    app</span>
+<span class="sr">  end</span>
+
+<span class="sr">  def build_app_from_string</span>
+<span class="sr">    Rack::Builder.new_from_string(self.options[:builder])</span>
+<span class="sr">  end</span>
+
+<span class="sr">  def wrapped_app</span>
+<span class="sr">    @wrapped_app ||= build_app app</span>
+<span class="sr">  end</span>
+<span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+
+<span class="sr">&lt;p&gt;  end</span>
+<span class="sr">end</span>
+</pre></div>

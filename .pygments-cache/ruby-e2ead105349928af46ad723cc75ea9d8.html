@@ -1,0 +1,20 @@
+<div class="highlight"><pre><span class="c1"># rails/railties/lib/rails/commands.rb</span>
+
+<span class="no">ARGV</span> <span class="o">&lt;&lt;</span> <span class="s1">&#39;--help&#39;</span> <span class="k">if</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">empty?</span>
+
+<span class="n">aliases</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="s2">&quot;g&quot;</span>  <span class="o">=&gt;</span> <span class="s2">&quot;generate&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;d&quot;</span>  <span class="o">=&gt;</span> <span class="s2">&quot;destroy&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;c&quot;</span>  <span class="o">=&gt;</span> <span class="s2">&quot;console&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;s&quot;</span>  <span class="o">=&gt;</span> <span class="s2">&quot;server&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;db&quot;</span> <span class="o">=&gt;</span> <span class="s2">&quot;dbconsole&quot;</span><span class="p">,</span>
+  <span class="s2">&quot;r&quot;</span>  <span class="o">=&gt;</span> <span class="s2">&quot;runner&quot;</span>
+<span class="p">}</span>
+
+<span class="n">command</span> <span class="o">=</span> <span class="no">ARGV</span><span class="o">.</span><span class="n">shift</span>
+<span class="n">command</span> <span class="o">=</span> <span class="n">aliases</span><span class="o">[</span><span class="n">command</span><span class="o">]</span> <span class="o">||</span> <span class="n">command</span>
+
+<span class="nb">require</span> <span class="s1">&#39;rails/commands/commands_tasks&#39;</span>
+
+<span class="ss">Rails</span><span class="p">:</span><span class="ss">:CommandsTasks</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="no">ARGV</span><span class="p">)</span><span class="o">.</span><span class="n">run_command!</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+</pre></div>

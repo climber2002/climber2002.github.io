@@ -1,0 +1,45 @@
+<div class="highlight"><pre><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;p&gt;set :stage, :production</span>
+<span class="sr">set :branch, &amp;ldquo;master&amp;rdquo;&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="no">This</span> <span class="n">is</span> <span class="n">used</span> <span class="k">in</span> <span class="n">the</span> <span class="no">Nginx</span> <span class="no">VirtualHost</span> <span class="n">to</span> <span class="n">specify</span> <span class="n">which</span> <span class="n">domains</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;h1&gt;the app should appear on. If you don&amp;rsquo;t yet have DNS setup, you&amp;rsquo;ll&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">need</span> <span class="n">to</span> <span class="n">create</span> <span class="n">entries</span> <span class="k">in</span> <span class="n">your</span> <span class="n">local</span> <span class="no">Hosts</span> <span class="n">file</span> <span class="k">for</span> <span class="n">testing</span><span class="o">.</span><span class="n">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;p&gt;set :server_name, &amp;ldquo;www.example.com example.com&amp;rdquo;&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">used</span> <span class="k">in</span> <span class="k">case</span> <span class="n">we</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="n">re</span> <span class="n">deploying</span> <span class="n">multiple</span> <span class="n">versions</span> <span class="n">of</span> <span class="n">the</span> <span class="n">same</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;h1&gt;app side by side. Also provides quick sanity checks when looking&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">at</span> <span class="n">filepaths</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;p&gt;set :full_app_name, &amp;ldquo;</span><span class="si">#{</span><span class="n">fetch</span><span class="p">(</span><span class="ss">:application</span><span class="p">)</span><span class="si">}</span><span class="sr">_</span><span class="si">#{</span><span class="n">fetch</span><span class="p">(</span><span class="ss">:stage</span><span class="p">)</span><span class="si">}</span><span class="sr">&amp;rdquo;&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">server</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="mi">192</span><span class="o">.</span><span class="mi">168</span><span class="o">.</span><span class="mi">22</span><span class="o">.</span><span class="mi">10</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;,</span> <span class="ss">user</span><span class="p">:</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">deploy</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;,</span> <span class="ss">roles</span><span class="p">:</span> <span class="sx">%w{web app db}</span><span class="p">,</span> <span class="ss">primary</span><span class="p">:</span> <span class="kp">true</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;p&gt;set :deploy_to, &amp;ldquo;/</span><span class="n">product</span><span class="o">/</span><span class="c1">#{fetch(:full_app_name)}&amp;rdquo;&lt;/p&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">dont</span> <span class="n">try</span> <span class="ow">and</span> <span class="n">infer</span> <span class="n">something</span> <span class="n">as</span> <span class="n">important</span> <span class="n">as</span> <span class="n">environment</span> <span class="n">from</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;h1&gt;stage name.&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">set</span> <span class="ss">:rails_env</span><span class="p">,</span> <span class="ss">:production</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;h1&gt;number of unicorn workers, this will be reflected in&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">the</span> <span class="n">unicorn</span><span class="o">.</span><span class="n">rb</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">monit</span> <span class="n">configs</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;p&gt;set :unicorn_worker_count, 5&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">whether</span> <span class="n">we</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="n">re</span> <span class="n">using</span> <span class="n">ssl</span> <span class="ow">or</span> <span class="ow">not</span><span class="p">,</span> <span class="n">used</span> <span class="k">for</span> <span class="n">building</span> <span class="n">nginx</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;h1&gt;config file&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">set</span> <span class="ss">:enable_ssl</span><span class="p">,</span> <span class="kp">false</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;p&gt;</span>
+</pre></div>

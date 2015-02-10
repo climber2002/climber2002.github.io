@@ -1,0 +1,15 @@
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">CreateCountries</span> <span class="o">&lt;</span> <span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Migration</span>
+  <span class="k">def</span> <span class="nf">change</span>
+    <span class="n">create_table</span> <span class="ss">:countries</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+      <span class="n">t</span><span class="o">.</span><span class="n">string</span> <span class="ss">:name</span><span class="p">,</span> <span class="ss">:unique</span> <span class="o">=&gt;</span> <span class="kp">true</span>
+      <span class="n">t</span><span class="o">.</span><span class="n">string</span> <span class="ss">:iso_code</span><span class="p">,</span> <span class="ss">:unique</span> <span class="o">=&gt;</span> <span class="kp">true</span>
+      <span class="n">t</span><span class="o">.</span><span class="n">multi_polygon</span> <span class="ss">:geom</span><span class="p">,</span> <span class="ss">:srid</span> <span class="o">=&gt;</span> <span class="mi">4326</span>
+      <span class="n">t</span><span class="o">.</span><span class="n">timestamps</span>
+    <span class="k">end</span>
+
+    <span class="n">change_table</span> <span class="ss">:countries</span> <span class="k">do</span> <span class="o">|</span><span class="n">t</span><span class="o">|</span>
+      <span class="n">t</span><span class="o">.</span><span class="n">index</span> <span class="ss">:geom</span><span class="p">,</span> <span class="ss">:spatial</span> <span class="o">=&gt;</span> <span class="kp">true</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>

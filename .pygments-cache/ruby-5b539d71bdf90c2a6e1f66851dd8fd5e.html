@@ -1,0 +1,28 @@
+<div class="highlight"><pre><span class="c1"># config/application.rb</span>
+<span class="nb">require</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s1">&#39;../boot&#39;</span><span class="p">,</span> <span class="bp">__FILE__</span><span class="p">)</span>
+
+<span class="nb">require</span> <span class="s1">&#39;rails/all&#39;</span>
+
+<span class="c1"># Require the gems listed in Gemfile, including any gems</span>
+<span class="c1"># you&#39;ve limited to :test, :development, or :production.</span>
+<span class="no">Bundler</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="o">*</span><span class="no">Rails</span><span class="o">.</span><span class="n">groups</span><span class="p">)</span>
+
+<span class="k">module</span> <span class="nn">Sample</span>
+  <span class="k">class</span> <span class="nc">Application</span> <span class="o">&lt;</span> <span class="ss">Rails</span><span class="p">:</span><span class="ss">:Application</span>
+    <span class="c1"># Settings in config/environments/* take precedence over those specified here.</span>
+    <span class="c1"># Application configuration should go into files in config/initializers</span>
+    <span class="c1"># -- all .rb files in that directory are automatically loaded.</span>
+
+    <span class="c1"># Set Time.zone default to the specified zone and make Active Record auto-convert to this zone.</span>
+    <span class="c1"># Run &quot;rake -D time&quot; for a list of tasks for finding time zone names. Default is UTC.</span>
+    <span class="c1"># config.time_zone = &#39;Central Time (US &amp; Canada)&#39;</span>
+
+    <span class="c1"># The default locale is :en and all translations from config/locales/*.rb,yml are auto loaded.</span>
+    <span class="c1"># config.i18n.load_path += Dir[Rails.root.join(&#39;my&#39;, &#39;locales&#39;, &#39;*.{rb,yml}&#39;).to_s]</span>
+    <span class="c1"># config.i18n.default_locale = :de</span>
+
+    <span class="c1"># For not swallow errors in after_commit/after_rollback callbacks.</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">active_record</span><span class="o">.</span><span class="n">raise_in_transactional_callbacks</span> <span class="o">=</span> <span class="kp">true</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>
