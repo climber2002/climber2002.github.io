@@ -1,0 +1,7 @@
+<div class="highlight"><pre><span class="n">province</span> <span class="o">=</span> <span class="no">Province</span><span class="o">.</span><span class="n">first</span>
+<span class="n">factory</span> <span class="o">=</span> <span class="ss">RGeo</span><span class="p">:</span><span class="ss">:GeoJSON</span><span class="o">::</span><span class="no">EntityFactory</span><span class="o">.</span><span class="n">instance</span>
+<span class="n">feature</span> <span class="o">=</span> <span class="n">factory</span><span class="o">.</span><span class="n">feature</span> <span class="n">province</span><span class="o">.</span><span class="n">geom</span>
+<span class="nb">hash</span> <span class="o">=</span> <span class="ss">RGeo</span><span class="p">:</span><span class="ss">:GeoJSON</span><span class="o">.</span><span class="n">encode</span> <span class="n">feature</span>
+<span class="nb">puts</span> <span class="nb">hash</span><span class="o">.</span><span class="n">to_json</span>
+ 
+</pre></div>

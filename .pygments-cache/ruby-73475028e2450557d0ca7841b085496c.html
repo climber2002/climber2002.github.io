@@ -1,0 +1,28 @@
+<div class="highlight"><pre><span class="k">class</span> <span class="nc">ImportCountriesFromShp</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Migration</span>
+  <span class="k">def</span> <span class="nf">up</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;pre&gt;&lt;code&gt;from_shp_sql = `shp2pgsql -c -g geom -W LATIN1 -s 4326 </span><span class="si">#{</span><span class="no">Rails</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;db&#39;</span><span class="p">,</span> <span class="s1">&#39;shpfiles&#39;</span><span class="p">,</span> <span class="s1">&#39;GAB_adm0.shp&#39;</span><span class="p">)</span><span class="si">}</span><span class="sr"> countries_ref`</span>
+
+<span class="sr">Country.transaction do</span>
+<span class="sr">  execute from_shp_sql</span>
+
+<span class="sr">  execute &amp;lt;&amp;lt;-SQL</span>
+<span class="sr">      insert into countries(name, iso_code, geom) </span>
+<span class="sr">        select name_engli, iso, geom from countries_ref</span>
+<span class="sr">  SQL</span>
+
+<span class="sr">  drop_table :countries_ref</span>
+<span class="sr">end</span>
+<span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+
+<span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">def</span> <span class="nf">down</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;pre&gt;&lt;code&gt;Country.delete_all</span>
+<span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+
+<span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="k">end</span>
+</pre></div>

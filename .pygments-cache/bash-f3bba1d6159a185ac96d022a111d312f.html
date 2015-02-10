@@ -1,0 +1,7 @@
+<div class="highlight"><pre><span class="nb">export </span><span class="nv">RBENV_ROOT</span><span class="o">=</span>&amp;ldquo;<span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/.rbenv&amp;rdquo;&lt;/p&gt;
+
+&lt;p&gt;if <span class="o">[</span> -d &amp;ldquo;<span class="k">${</span><span class="nv">RBENV_ROOT</span><span class="k">}</span>&amp;rdquo; <span class="o">]</span>; <span class="k">then</span>
+<span class="k">  </span><span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span>&amp;ldquo;<span class="k">${</span><span class="nv">RBENV_ROOT</span><span class="k">}</span>/bin:<span class="k">${</span><span class="nv">PATH</span><span class="k">}</span>&amp;rdquo;
+  <span class="nb">eval</span> &amp;ldquo;<span class="k">$(</span>rbenv init &amp;ndash;<span class="k">)</span>&amp;rdquo;
+<span class="k">fi</span>
+</pre></div>

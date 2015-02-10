@@ -1,0 +1,50 @@
+<div class="highlight"><pre><span class="k">module</span> <span class="nn">Rails</span>
+  <span class="k">module</span> <span class="nn">Initializable</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;pre&gt;&lt;code&gt;def self.included(base) #:nodoc:</span>
+<span class="sr">  base.extend ClassMethods</span>
+<span class="sr">end</span>
+
+<span class="sr">def run_initializers(group=:default, *args)</span>
+<span class="sr">  return if instance_variable_defined?(:@ran)</span>
+<span class="sr">  initializers.tsort_each do |initializer|</span>
+<span class="sr">    initializer.run(*args) if initializer.belongs_to?(group)</span>
+<span class="sr">  end</span>
+<span class="sr">  @ran = true</span>
+<span class="sr">end</span>
+
+<span class="sr">def initializers</span>
+<span class="sr">  @initializers ||= self.class.initializers_for(self)</span>
+<span class="sr">end</span>
+
+<span class="sr">module ClassMethods</span>
+<span class="sr">  def initializers</span>
+<span class="sr">    @initializers ||= Collection.new</span>
+<span class="sr">  end</span>
+
+<span class="sr">  def initializers_chain</span>
+<span class="sr">    initializers = Collection.new</span>
+<span class="sr">    ancestors.reverse_each do |klass|</span>
+<span class="sr">      next unless klass.respond_to?(:initializers)</span>
+<span class="sr">      initializers = initializers + klass.initializers</span>
+<span class="sr">    end</span>
+<span class="sr">    initializers</span>
+<span class="sr">  end</span>
+
+<span class="sr">  def initializers_for(binding)</span>
+<span class="sr">    Collection.new(initializers_chain.map { |i| i.bind(binding) })</span>
+<span class="sr">  end</span>
+
+<span class="sr">  def initializer(name, opts = {}, &amp;amp;blk)</span>
+<span class="sr">    raise ArgumentError, &quot;A block must be passed when defining an initializer&quot; unless blk</span>
+<span class="sr">    opts[:after] ||= initializers.last.name unless initializers.empty? || initializers.find { |i| i.name == opts[:before] }</span>
+<span class="sr">    initializers &amp;lt;&amp;lt; Initializer.new(name, nil, opts, &amp;amp;blk)</span>
+<span class="sr">  end</span>
+<span class="sr">end</span>
+<span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+
+<span class="sr">&lt;p&gt;  end</span>
+<span class="sr">end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>
+</pre></div>

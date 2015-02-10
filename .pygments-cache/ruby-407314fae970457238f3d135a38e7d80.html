@@ -1,0 +1,17 @@
+<div class="highlight"><pre><span class="c1"># app/models/app.rb</span>
+
+<span class="k">class</span> <span class="nc">App</span>
+
+  <span class="kp">include</span> <span class="ss">Rails</span><span class="p">:</span><span class="ss">:Initializable</span>
+
+  <span class="k">def</span> <span class="nf">initialize</span>
+    <span class="vi">@child1</span> <span class="o">=</span> <span class="no">Child1</span><span class="o">.</span><span class="n">new</span>
+    <span class="vi">@child2</span> <span class="o">=</span> <span class="no">Child2</span><span class="o">.</span><span class="n">new</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">initializers</span>
+    <span class="vi">@child1</span><span class="o">.</span><span class="n">initializers</span> <span class="o">+</span> <span class="vi">@child2</span><span class="o">.</span><span class="n">initializers</span>
+  <span class="k">end</span>
+
+<span class="k">end</span>
+</pre></div>

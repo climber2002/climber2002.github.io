@@ -1,0 +1,24 @@
+<div class="highlight"><pre><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;p&gt;class ProvincesController &amp;lt; ApplicationController&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">def</span> <span class="nf">index</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;pre&gt;&lt;code&gt;  @provinces = Province.all</span>
+
+<span class="sr">  respond_to do |format|</span>
+<span class="sr">    format.json do  </span>
+<span class="sr">      feature_collection = Province.to_feature_collection @provinces</span>
+<span class="sr">      render json: RGeo::GeoJSON.encode(feature_collection)</span>
+<span class="sr">    end</span>
+
+<span class="sr">    format.html</span>
+<span class="sr">  end</span>
+<span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+
+<span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;p&gt;</span>
+</pre></div>

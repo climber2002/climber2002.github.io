@@ -1,0 +1,136 @@
+<div class="highlight"><pre><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;p&gt;set :application, &amp;lsquo;deploy_sample&amp;rsquo;</span>
+<span class="sr">set :deploy_user, &amp;lsquo;deploy&amp;rsquo;&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">setup</span> <span class="n">repo</span> <span class="n">details</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;p&gt;set :scm, :git</span>
+<span class="sr">set :repo_url, &amp;lsquo;git@github.com:climber2002/</span><span class="n">deploy_sample</span><span class="o">.</span><span class="n">git</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;h1&gt;setup rbenv.&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">set</span> <span class="ss">:rbenv_type</span><span class="p">,</span> <span class="ss">:user</span>
+<span class="n">set</span> <span class="ss">:rbenv_ruby</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="mi">2</span><span class="o">.</span><span class="mi">1</span><span class="o">.</span><span class="mi">4</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
+<span class="n">set</span> <span class="ss">:rbenv_prefix</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="no">RBENV_ROOT</span><span class="o">=</span><span class="c1">#{fetch(:rbenv_path)} RBENV_VERSION=#{fetch(:rbenv_ruby)} #{fetch(:rbenv_path)}/bin/rbenv exec&amp;rdquo;</span>
+<span class="n">set</span> <span class="ss">:rbenv_map_bins</span><span class="p">,</span> <span class="sx">%w{rake gem bundle ruby rails}</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;h1&gt;how many old releases do we want to keep, not much&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">set</span> <span class="ss">:keep_releases</span><span class="p">,</span> <span class="mi">5</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;h1&gt;files we want symlinking to specific entries in shared&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">set</span> <span class="ss">:linked_files</span><span class="p">,</span> <span class="sx">%w{config/database.yml config/secrets.yml}</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;h1&gt;dirs we want symlinking to shared&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">set</span> <span class="ss">:linked_dirs</span><span class="p">,</span> <span class="sx">%w{bin log tmp/pids tmp/cache tmp/sockets vendor/bundle public/system}</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;h1&gt;what specs should be run before deployment is allowed to&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">continue</span><span class="p">,</span> <span class="n">see</span> <span class="n">lib</span><span class="o">/</span><span class="n">capistrano</span><span class="o">/</span><span class="n">tasks</span><span class="o">/</span><span class="n">run_tests</span><span class="o">.</span><span class="n">cap</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;p&gt;set :tests, []&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">which</span> <span class="n">config</span> <span class="n">files</span> <span class="n">should</span> <span class="n">be</span> <span class="n">copied</span> <span class="n">by</span> <span class="ss">deploy</span><span class="p">:</span><span class="n">setup_config</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;h1&gt;see documentation in lib/</span><span class="n">capistrano</span><span class="o">/</span><span class="n">tasks</span><span class="o">/</span><span class="n">setup_config</span><span class="o">.</span><span class="n">cap</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;h1&gt;for details of operations&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">set</span><span class="p">(</span><span class="ss">:config_files</span><span class="p">,</span> <span class="sx">%w(</span>
+<span class="sx">  nginx.conf</span>
+<span class="sx">  database.example.yml</span>
+<span class="sx">  log_rotation</span>
+<span class="sx">  monit</span>
+<span class="sx">  unicorn.rb</span>
+<span class="sx">  unicorn_init.sh</span>
+<span class="sx">  secrets.yml</span>
+<span class="sx">)</span><span class="p">)</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;h1&gt;which config files should be made executable after copying&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">by</span> <span class="ss">deploy</span><span class="p">:</span><span class="n">setup_config</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;p&gt;set(:executable_config_files, %w(</span>
+<span class="sr">  unicorn_init.sh</span>
+<span class="sr">))&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">files</span> <span class="n">which</span> <span class="n">need</span> <span class="n">to</span> <span class="n">be</span> <span class="n">symlinked</span> <span class="n">to</span> <span class="n">other</span> <span class="n">parts</span> <span class="n">of</span> <span class="n">the</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;h1&gt;filesystem. For example nginx virtualhosts, log rotation&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">init</span> <span class="n">scripts</span> <span class="n">etc</span><span class="o">.</span> <span class="no">The</span> <span class="n">full_app_name</span> <span class="n">variable</span> <span class="n">isn</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="n">t</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;h1&gt;available at this point so we use a custom template &lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">tag</span> <span class="ow">and</span> <span class="k">then</span> <span class="n">add</span> <span class="n">it</span> <span class="n">at</span> <span class="n">run</span> <span class="n">time</span><span class="o">.</span><span class="n">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;p&gt;set(:symlinks, [</span>
+<span class="sr">  {&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="ss">source</span><span class="p">:</span> <span class="s2">&quot;nginx.conf&quot;</span><span class="p">,</span>
+<span class="ss">link</span><span class="p">:</span> <span class="s2">&quot;/etc/nginx/sites-enabled/&quot;</span>
+<span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="p">},</span>
+  <span class="p">{</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;pre&gt;&lt;code&gt;source: &quot;unicorn_init.sh&quot;,</span>
+<span class="sr">link: &quot;/e</span><span class="n">tc</span><span class="o">/</span><span class="n">init</span><span class="o">.</span><span class="n">d</span><span class="o">/</span><span class="n">unicorn_</span><span class="s2">&quot;</span>
+<span class="s2">&lt;/code&gt;&lt;/pre&gt;</span>
+
+<span class="s2">&lt;p&gt;  },</span>
+<span class="s2">  {&lt;/p&gt;</span>
+
+<span class="s2">&lt;pre&gt;&lt;code&gt;source: &quot;</span><span class="n">log_rotation</span><span class="s2">&quot;,</span>
+<span class="s2">&lt;/code&gt;&lt;/pre&gt;</span>
+
+<span class="s2">&lt;p&gt;   link: &amp;ldquo;/etc/logrotate.d/&amp;rdquo;</span>
+<span class="s2">  },</span>
+<span class="s2">  {&lt;/p&gt;</span>
+
+<span class="s2">&lt;pre&gt;&lt;code&gt;source: &quot;</span><span class="n">monit</span><span class="s2">&quot;,</span>
+<span class="s2">link: &quot;</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">monit</span><span class="o">/</span><span class="n">conf</span><span class="o">.</span><span class="n">d</span><span class="o">/.</span><span class="n">conf</span><span class="s2">&quot;</span>
+<span class="s2">&lt;/code&gt;&lt;/pre&gt;</span>
+
+<span class="s2">&lt;p&gt;  }</span>
+<span class="s2">])&lt;/p&gt;</span>
+
+<span class="s2">&lt;h1&gt;this:&lt;/h1&gt;</span>
+
+<span class="s2">&lt;h1&gt;&lt;a href=&quot;</span><span class="ss">http</span><span class="p">:</span><span class="sr">//</span><span class="n">www</span><span class="o">.</span><span class="n">capistranorb</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">documentation</span><span class="o">/</span><span class="n">getting</span><span class="o">-</span><span class="n">started</span><span class="o">/</span><span class="n">flow</span><span class="o">/</span><span class="s2">&quot;&gt;http://www.capistranorb.com/documentation/getting-started/flow/&lt;/a&gt;&lt;/h1&gt;</span>
+
+<span class="s2">&lt;h1&gt;is worth reading for a quick overview of what tasks are called&lt;/h1&gt;</span>
+
+<span class="s2">&lt;h1&gt;and when for &lt;code&gt;cap stage deploy&lt;/code&gt;&lt;/h1&gt;</span>
+
+<span class="s2">&lt;p&gt;namespace :deploy do</span>
+<span class="s2">  # make sure we&amp;rsquo;re deploying what we think we&amp;rsquo;re deploying</span>
+<span class="s2">  before :deploy, &amp;ldquo;deploy:check_revision&amp;rdquo;</span>
+<span class="s2">  # only allow a deploy with passing tests to deployed</span>
+<span class="s2">  before :deploy, &amp;ldquo;deploy:run_tests&amp;rdquo;</span>
+<span class="s2">  # compile assets locally then rsync</span>
+<span class="s2">  after &amp;lsquo;deploy:symlink:shared&amp;rsquo;, &amp;lsquo;deploy:compile_assets_locally&amp;rsquo;</span>
+<span class="s2">  after :finishing, &amp;lsquo;deploy:cleanup&amp;rsquo;&lt;/p&gt;</span>
+
+<span class="s2">&lt;p&gt;  # remove the default nginx configuration as it will tend</span>
+<span class="s2">  # to conflict with our configs.</span>
+<span class="s2">  before &amp;lsquo;deploy:setup_config&amp;rsquo;, &amp;lsquo;nginx:remove_default_vhost&amp;rsquo;&lt;/p&gt;</span>
+
+<span class="s2">&lt;p&gt;  # reload nginx to it will pick up any modified vhosts from</span>
+<span class="s2">  # setup_config</span>
+<span class="s2">  after &amp;lsquo;deploy:setup_config&amp;rsquo;, &amp;lsquo;nginx:reload&amp;rsquo;&lt;/p&gt;</span>
+
+<span class="s2">&lt;p&gt;  # Restart monit so it will pick up any monit configurations</span>
+<span class="s2">  # we&amp;rsquo;ve added</span>
+<span class="s2">  after &amp;lsquo;deploy:setup_config&amp;rsquo;, &amp;lsquo;monit:restart&amp;rsquo;&lt;/p&gt;</span>
+
+<span class="s2">&lt;p&gt;  # As of Capistrano 3.1, the &lt;code&gt;deploy:restart&lt;/code&gt; task is not called</span>
+<span class="s2">  # automatically.</span>
+<span class="s2">  after &amp;lsquo;deploy:publishing&amp;rsquo;, &amp;lsquo;deploy:restart&amp;rsquo;</span>
+<span class="s2">end&lt;/p&gt;</span>
+
+<span class="s2">&lt;p&gt;</span>
+</pre></div>

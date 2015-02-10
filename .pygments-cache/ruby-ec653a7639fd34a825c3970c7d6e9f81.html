@@ -1,0 +1,13 @@
+<div class="highlight"><pre><span class="c1"># rails/railties/lib/rails/application.rb</span>
+
+<span class="k">module</span> <span class="nn">Rails</span>
+  <span class="k">class</span> <span class="nc">Application</span> <span class="o">&lt;</span> <span class="no">Engine</span>
+    <span class="k">class</span> <span class="o">&lt;&lt;</span> <span class="nb">self</span>
+      <span class="k">def</span> <span class="nf">inherited</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
+        <span class="k">super</span>
+        <span class="no">Rails</span><span class="o">.</span><span class="n">app_class</span> <span class="o">=</span> <span class="n">base</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>

@@ -1,0 +1,37 @@
+<div class="highlight"><pre><span class="k">module</span> <span class="nn">Rails</span>
+  <span class="k">module</span> <span class="nn">Initializable</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;pre&gt;&lt;code&gt;class Initializer</span>
+<span class="sr">  attr_reader :name, :block</span>
+
+<span class="sr">  def initialize(name, context, options, &amp;amp;block)</span>
+<span class="sr">    options[:group] ||= :default</span>
+<span class="sr">    @name, @context, @options, @block = name, context, options, block</span>
+<span class="sr">  end</span>
+
+<span class="sr">  def before</span>
+<span class="sr">    @options[:before]</span>
+<span class="sr">  end</span>
+
+<span class="sr">  def after</span>
+<span class="sr">    @options[:after]</span>
+<span class="sr">  end</span>
+
+<span class="sr">  def belongs_to?(group)</span>
+<span class="sr">    @options[:group] == group || @options[:group] == :all</span>
+<span class="sr">  end</span>
+
+<span class="sr">  def run(*args)</span>
+<span class="sr">    @context.instance_exec(*args, &amp;amp;block)</span>
+<span class="sr">  end</span>
+
+<span class="sr">  def bind(context)</span>
+<span class="sr">    return self if @context</span>
+<span class="sr">    Initializer.new(@name, context, @options, &amp;amp;block)</span>
+<span class="sr">  end</span>
+<span class="sr">end</span>
+<span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+
+<span class="sr">&lt;p&gt;  end</span>
+<span class="sr">end</span>
+</pre></div>

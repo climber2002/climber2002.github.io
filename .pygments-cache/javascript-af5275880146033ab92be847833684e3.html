@@ -1,0 +1,13 @@
+<div class="highlight"><pre> <span class="kd">var</span> <span class="nx">mapOptions</span> <span class="o">=</span> <span class="p">{</span>
+          <span class="nx">zoom</span><span class="o">:</span> <span class="mi">1</span><span class="p">,</span>
+          <span class="nx">mapTypeControlOptions</span><span class="o">:</span> <span class="p">{</span><span class="nx">mapTypeIds</span><span class="o">:</span>
+               <span class="p">[</span><span class="nx">google</span><span class="p">.</span><span class="nx">maps</span><span class="p">.</span><span class="nx">MapTypeId</span><span class="p">.</span><span class="nx">ROADMAP</span><span class="p">]}</span>
+        <span class="p">};</span>
+
+<span class="kd">var</span> <span class="nx">mapElement</span> <span class="o">=</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="s1">&#39;mapDiv&#39;</span><span class="p">);</span>
+<span class="nx">map</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">google</span><span class="p">.</span><span class="nx">maps</span><span class="p">.</span><span class="nx">Map</span><span class="p">(</span><span class="nx">mapElement</span><span class="p">,</span> <span class="nx">mapOptions</span><span class="p">);</span>
+<span class="nx">map</span><span class="p">.</span><span class="nx">setMapTypeId</span><span class="p">(</span><span class="nx">google</span><span class="p">.</span><span class="nx">maps</span><span class="p">.</span><span class="nx">MapTypeId</span><span class="p">.</span><span class="nx">ROADMAP</span><span class="p">);</span>
+
+<span class="c1">//Load GeoJSON</span>
+<span class="nx">map</span><span class="p">.</span><span class="nx">data</span><span class="p">.</span><span class="nx">loadGeoJson</span><span class="p">(</span><span class="s2">&quot;/gabon.json&quot;</span><span class="p">);</span>
+</pre></div>

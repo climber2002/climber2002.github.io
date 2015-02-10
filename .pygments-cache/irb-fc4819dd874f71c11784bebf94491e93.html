@@ -1,0 +1,9 @@
+<div class="highlight"><pre><span class="go"> pry(main)&gt; gabon = Country.first</span>
+<span class="go"> pry(main)&gt; </span>
+<span class="go"> pry(main)&gt; factory = RGeo::GeoJSON::EntityFactory.instance</span>
+<span class="go">=&gt; #&lt;RGeo::GeoJSON::EntityFactory:0x007ffe2c7265c8&gt;</span>
+<span class="go"> pry(main)&gt; feature = factory.feature gabon.geom</span>
+<span class="go"> pry(main)&gt; hash = RGeo::GeoJSON.encode feature</span>
+<span class="go"> pry(main)&gt; File.open(&#39;gabon.json&#39;, &#39;w&#39;) {|file| file.write hash.to_json}</span>
+<span class="go">  </span>
+</pre></div>

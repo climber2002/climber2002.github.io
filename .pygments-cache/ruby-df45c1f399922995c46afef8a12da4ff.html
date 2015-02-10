@@ -1,0 +1,49 @@
+<div class="highlight"><pre><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;p&gt;module SelectizeHelpers&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">def</span> <span class="nf">selectize_click</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;pre&gt;&lt;code&gt;selectize_within(id) do </span>
+<span class="sr">  first(&#39;div.selectize-input&#39;).click </span>
+<span class="sr">end</span>
+<span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+
+<span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">def</span> <span class="nf">select_option</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;pre&gt;&lt;code&gt;selectize_within(id) do</span>
+<span class="sr">  first(&#39;div.selectize-input&#39;).click </span>
+<span class="sr">  find(&#39;div.option&#39;, :text =&amp;gt; text).click</span>
+<span class="sr">end</span>
+<span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+
+<span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">def</span> <span class="nf">set_text</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;pre&gt;&lt;code&gt;selectize_within(id) do </span>
+<span class="sr">  first(&#39;div.selectize-input input&#39;).set(text)</span>
+<span class="sr">end</span>
+<span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+
+<span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">def</span> <span class="nf">selectize_within</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;pre&gt;&lt;code&gt;within(:xpath, &quot;/</span><span class="o">/</span><span class="n">input</span><span class="o">[</span><span class="vi">@id</span><span class="o">=</span><span class="s1">&#39;#{id}&#39;</span><span class="o">]/.</span><span class="n">.</span><span class="s2">&quot;) do </span>
+<span class="s2">  yield if block_given?</span>
+<span class="s2">end</span>
+<span class="s2">&lt;/code&gt;&lt;/pre&gt;</span>
+
+<span class="s2">&lt;p&gt;  end&lt;/p&gt;</span>
+
+<span class="s2">&lt;p&gt;end&lt;/p&gt;</span>
+
+<span class="s2">&lt;p&gt;RSpec.configure do |config|</span>
+<span class="s2">  config.include SelectizeHelpers, :type =&gt; :feature</span>
+<span class="s2">end&lt;/p&gt;</span>
+
+<span class="s2">&lt;p&gt;</span>
+</pre></div>

@@ -1,0 +1,45 @@
+<div class="highlight"><pre><span class="k">module</span> <span class="nn">Rack</span>
+  <span class="k">class</span> <span class="nc">Server</span>
+
+    <span class="kp">attr_writer</span> <span class="ss">:options</span>
+
+    <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">options</span> <span class="o">=</span> <span class="kp">nil</span><span class="p">)</span>
+      <span class="vi">@options</span> <span class="o">=</span> <span class="n">options</span>
+      <span class="vi">@app</span> <span class="o">=</span> <span class="n">options</span><span class="o">[</span><span class="ss">:app</span><span class="o">]</span> <span class="k">if</span> <span class="n">options</span> <span class="o">&amp;&amp;</span> <span class="n">options</span><span class="o">[</span><span class="ss">:app</span><span class="o">]</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">app</span>
+      <span class="vi">@app</span> <span class="o">||=</span> <span class="n">options</span><span class="o">[</span><span class="ss">:builder</span><span class="o">]</span> <span class="p">?</span> <span class="n">build_app_from_string</span> <span class="p">:</span> <span class="n">build_app_and_options_from_config</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">start</span> <span class="o">&amp;</span><span class="n">blk</span>
+      <span class="c1"># ...</span>
+
+      <span class="n">server</span><span class="o">.</span><span class="n">run</span> <span class="n">wrapped_app</span><span class="p">,</span> <span class="n">options</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">blk</span>
+    <span class="k">end</span>
+
+    <span class="k">def</span> <span class="nf">server</span>
+      <span class="vi">@_server</span> <span class="o">||=</span> <span class="ss">Rack</span><span class="p">:</span><span class="ss">:Handler</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">options</span><span class="o">[</span><span class="ss">:server</span><span class="o">]</span><span class="p">)</span> <span class="o">||</span> <span class="ss">Rack</span><span class="p">:</span><span class="ss">:Handler</span><span class="o">.</span><span class="n">default</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+    <span class="k">end</span>
+
+    <span class="kp">private</span>
+      <span class="k">def</span> <span class="nf">build_app_and_options_from_config</span>
+        <span class="k">if</span> <span class="o">!::</span><span class="no">File</span><span class="o">.</span><span class="n">exist?</span> <span class="n">options</span><span class="o">[</span><span class="ss">:config</span><span class="o">]</span>
+          <span class="nb">abort</span> <span class="s2">&quot;configuration </span><span class="si">#{</span><span class="n">options</span><span class="o">[</span><span class="ss">:config</span><span class="o">]</span><span class="si">}</span><span class="s2"> not found&quot;</span>
+        <span class="k">end</span>
+
+        <span class="n">app</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="ss">Rack</span><span class="p">:</span><span class="ss">:Builder</span><span class="o">.</span><span class="n">parse_file</span><span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">options</span><span class="o">[</span><span class="ss">:config</span><span class="o">]</span><span class="p">,</span> <span class="n">opt_parser</span><span class="p">)</span>
+        <span class="nb">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">merge!</span> <span class="n">options</span>
+        <span class="n">app</span>
+      <span class="k">end</span>
+
+      <span class="k">def</span> <span class="nf">build_app_from_string</span>
+        <span class="ss">Rack</span><span class="p">:</span><span class="ss">:Builder</span><span class="o">.</span><span class="n">new_from_string</span><span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">options</span><span class="o">[</span><span class="ss">:builder</span><span class="o">]</span><span class="p">)</span>
+      <span class="k">end</span>
+
+      <span class="k">def</span> <span class="nf">wrapped_app</span>
+        <span class="vi">@wrapped_app</span> <span class="o">||=</span> <span class="n">build_app</span> <span class="n">app</span>
+      <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</pre></div>

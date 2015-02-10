@@ -1,0 +1,14 @@
+<div class="highlight"><pre><span class="c1"># Use Unicorn as the app server</span>
+<span class="n">gem</span> <span class="s1">&#39;unicorn&#39;</span>
+
+<span class="n">gem</span> <span class="s1">&#39;capistrano&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 3.1.0&#39;</span><span class="p">,</span> <span class="ss">group</span><span class="p">:</span> <span class="ss">:development</span>
+
+<span class="c1"># rails specific capistrano funcitons</span>
+<span class="n">gem</span> <span class="s1">&#39;capistrano-rails&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 1.1.0&#39;</span><span class="p">,</span> <span class="ss">group</span><span class="p">:</span> <span class="ss">:development</span>
+
+<span class="c1"># integrate bundler with capistrano</span>
+<span class="n">gem</span> <span class="s1">&#39;capistrano-bundler&#39;</span><span class="p">,</span> <span class="ss">group</span><span class="p">:</span> <span class="ss">:development</span>
+
+<span class="c1"># if you are using RBENV</span>
+<span class="n">gem</span> <span class="s1">&#39;capistrano-rbenv&#39;</span><span class="p">,</span> <span class="s2">&quot;~&gt; 2.0&quot;</span><span class="p">,</span> <span class="ss">group</span><span class="p">:</span> <span class="ss">:development</span>
+</pre></div>

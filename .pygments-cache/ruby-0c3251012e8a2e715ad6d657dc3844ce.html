@@ -1,0 +1,22 @@
+<div class="highlight"><pre><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;h1&gt;rails/</span><span class="n">railties</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">rails</span><span class="o">/</span><span class="n">commands</span><span class="o">.</span><span class="n">rb</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+
+<span class="sr">&lt;p&gt;ARGV &amp;lt;&amp;lt; &amp;lsquo;&amp;mdash;help&amp;rsquo; if ARGV.empty?&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">aliases</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">g</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>  <span class="o">=&gt;</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">generate</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span>
+  <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">d</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>  <span class="o">=&gt;</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">destroy</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span>
+  <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">c</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>  <span class="o">=&gt;</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">console</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span>
+  <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">s</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>  <span class="o">=&gt;</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">server</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span>
+  <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">db</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span> <span class="o">=&gt;</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">dbconsole</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span>
+  <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">r</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>  <span class="o">=&gt;</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">runner</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
+<span class="p">}</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;p&gt;command = ARGV.shift</span>
+<span class="sr">command = aliases[command] || command&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+
+<span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="nb">require</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">rails</span><span class="o">/</span><span class="n">commands</span><span class="o">/</span><span class="n">commands_tasks</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+
+<span class="sr">&lt;p&gt;Rails::CommandsTasks.new(ARGV).run_command!(command)</span>
+</pre></div>
