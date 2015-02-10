@@ -34,7 +34,7 @@ Is the information correct? [Y/n] Y
 
 Set a password for *deploy* user and accept all default options.
 
-Since we already add *deploy* user to sudo group. It can run sudo commands. However the user needs to input his password. When we run the capistrano deploy command later, it will run sudo commands. So I want to update this user so he doesn't need to type password when run sodo commands. For this we need to update the **/etc/sudoers** file. It's recommended to use the application **visudo** to update it.
+Since we already add *deploy* user to sudo group. It can run sudo commands. However the user needs to input his password when sudo. When we run the capistrano deploy command later, it will run sudo commands. So I want to update this user so that he doesn't need to type password when running sodo commands. For this we need to update the **/etc/sudoers** file. It's recommended to use the application **visudo** to update it.
 
 {% codeblock lang:bash %}
 
@@ -56,7 +56,7 @@ Our deployment organization is like following figure,
 
 {% img /images/deploy_structure.png %}
 
-Our host communicates with VM by SSH, and also when the VM sync code from github, it also uses SSH. So we need two public/private keypairs here.
+Our host communicates with VM by SSH, and also when the VM sync code from github, it also uses SSH. So we need two public/private keypairs here. One will be generated in VM and used to communicate with Github. And One will be generated in host machine and used to communicate with VM during deployment.
 
 Let's firstly generate a keypair for *deploy* user in VM. The public key for this keypair will be configured in github so the VM can download code from github.
 
@@ -81,6 +81,8 @@ deploy@vagrant-ubuntu-trusty-64:~$ ssh-keygen -t rsa -b 4096 -C climber2002@gmai
 
 {% endcodeblock %}
 
+The *climber2002@gmail.com* is my email, and you should use your email here. 
+
 Accept default options, and after generation two files should be created, **id_rsa** and **id_rsa.pub**.
 
 We can run **cat id_rsa.pub** and copy its content, and then configure this key in github.
@@ -89,7 +91,7 @@ In github, choose Settings -> SSH keys -> Add SSH key, and paste the public key,
 
 {% img /images/github_add_ssh_key.png %}
 
-Now we need to add the key of our host to the Vagrant VM.
+Now we need to add the key of our host to the Vagrant VM. Let's see if a key already existed.
 
 {% codeblock lang:bash %}
 host$ ls -l ~/.ssh
@@ -99,13 +101,13 @@ host$ ls -l ~/.ssh
 
 Normally you should already have **id_rsa** and **id_rsa.pub**. If not run the *ssh-keygen* again in host to generate the SSH key.
 
-And then lets copy the content of id_rsa.pub and copy it to VM's **~/.ssh/authorized_keys**. If this file doesn't exist, create it.
+And then lets copy the content of id_rsa.pub and copy it to VM's **~/.ssh/authorized_keys**. If this file doesn't exist, create it. And then paste the content in id_rsa.pub in this file as a standalone line.
 
 {% codeblock lang:bash %}
 deploy@vagrant-ubuntu-trusty-64:~/.ssh$ vi authorized_keys
 {% endcodeblock %}
 
-And also I updated the ssh config file **/etc/ssh/sshd_config** and changed the **PasswordAuthentication yes** to **PasswordAuthentication no** so we disable the password authentication.
+And also I updated the ssh config file **/etc/ssh/sshd_config** and changed the **PasswordAuthentication yes** to **PasswordAuthentication no** so we disable the password authentication, and only use Publickey authentication which is more secure.
 
 After that let's restart ssh service
 
