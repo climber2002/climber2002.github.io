@@ -4,7 +4,7 @@
   <title><![CDATA[AprilTouch]]></title>
   <link href="http://climber2002.github.io/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2015-02-10T21:43:42+10:30</updated>
+  <updated>2015-02-10T21:54:54+10:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -63,7 +63,7 @@
 
 <p>Set a password for <em>deploy</em> user and accept all default options.</p>
 
-<p>Since we already add <em>deploy</em> user to sudo group. It can run sudo commands. However the user needs to input his password. When we run the capistrano deploy command later, it will run sudo commands. So I want to update this user so he doesn&rsquo;t need to type password when run sodo commands. For this we need to update the <strong>/etc/sudoers</strong> file. It&rsquo;s recommended to use the application <strong>visudo</strong> to update it.</p>
+<p>Since we already add <em>deploy</em> user to sudo group. It can run sudo commands. However the user needs to input his password when sudo. When we run the capistrano deploy command later, it will run sudo commands. So I want to update this user so that he doesn&rsquo;t need to type password when running sodo commands. For this we need to update the <strong>/etc/sudoers</strong> file. It&rsquo;s recommended to use the application <strong>visudo</strong> to update it.</p>
 
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='bash'><span class='line'>vagrant@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>sudo visodu
@@ -83,7 +83,7 @@
 
 <p><img src="http://climber2002.github.io/images/deploy_structure.png"></p>
 
-<p>Our host communicates with VM by SSH, and also when the VM sync code from github, it also uses SSH. So we need two public/private keypairs here.</p>
+<p>Our host communicates with VM by SSH, and also when the VM sync code from github, it also uses SSH. So we need two public/private keypairs here. One will be generated in VM and used to communicate with Github. And One will be generated in host machine and used to communicate with VM during deployment.</p>
 
 <p>Let&rsquo;s firstly generate a keypair for <em>deploy</em> user in VM. The public key for this keypair will be configured in github so the VM can download code from github.</p>
 
@@ -111,6 +111,8 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
+<p>The <em>climber2002@gmail.com</em> is my email, and you should use your email here.</p>
+
 <p>Accept default options, and after generation two files should be created, <strong>id_rsa</strong> and <strong>id_rsa.pub</strong>.</p>
 
 <p>We can run <strong>cat id_rsa.pub</strong> and copy its content, and then configure this key in github.</p>
@@ -119,7 +121,7 @@
 
 <p><img src="http://climber2002.github.io/images/github_add_ssh_key.png"></p>
 
-<p>Now we need to add the key of our host to the Vagrant VM.</p>
+<p>Now we need to add the key of our host to the Vagrant VM. Let&rsquo;s see if a key already existed.</p>
 
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -132,14 +134,14 @@
 
 <p>Normally you should already have <strong>id_rsa</strong> and <strong>id_rsa.pub</strong>. If not run the <em>ssh-keygen</em> again in host to generate the SSH key.</p>
 
-<p>And then lets copy the content of id_rsa.pub and copy it to VM&rsquo;s <strong>~/.ssh/authorized_keys</strong>. If this file doesn&rsquo;t exist, create it.</p>
+<p>And then lets copy the content of id_rsa.pub and copy it to VM&rsquo;s <strong>~/.ssh/authorized_keys</strong>. If this file doesn&rsquo;t exist, create it. And then paste the content in id_rsa.pub in this file as a standalone line.</p>
 
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='bash'><span class='line'>deploy@vagrant-ubuntu-trusty-64:~/.ssh<span class="nv">$ </span>vi authorized_keys
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>And also I updated the ssh config file <strong>/etc/ssh/sshd_config</strong> and changed the <strong>PasswordAuthentication yes</strong> to <strong>PasswordAuthentication no</strong> so we disable the password authentication.</p>
+<p>And also I updated the ssh config file <strong>/etc/ssh/sshd_config</strong> and changed the <strong>PasswordAuthentication yes</strong> to <strong>PasswordAuthentication no</strong> so we disable the password authentication, and only use Publickey authentication which is more secure.</p>
 
 <p>After that let&rsquo;s restart ssh service</p>
 
