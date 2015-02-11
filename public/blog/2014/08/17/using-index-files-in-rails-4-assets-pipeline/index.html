@@ -1,0 +1,328 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Using Index Files in Rails 4 Assets Pipeline - AprilTouch</title>
+  <meta name="author" content="Andy Wang">
+
+  
+  <meta name="description" content="Recently I bought a website template from WrapBootstrap and I wanna itegrate this into a Spree website I&rsquo;m working on. According to the &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://climber2002.github.io/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="AprilTouch" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-51109944-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">AprilTouch</a></h1>
+  
+    <h2>My blog about Ruby and iOS development</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:climber2002.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Using Index Files in Rails 4 Assets Pipeline</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-08-17T21:15:28+09:30" pubdate data-updated="true">Aug 17<span>th</span>, 2014</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Recently I bought a website template from <a href="https://wrapbootstrap.com/theme/tshop-responsive-e-commerce-template-WB002S263">WrapBootstrap</a> and I wanna itegrate this into a Spree website I&rsquo;m working on. According to the documents of <a href="http://edgeguides.rubyonrails.org/asset_pipeline.html">Asset Pipeline</a> and the <a href="http://railscasts.com/episodes/279-understanding-the-asset-pipeline">RailsCasts</a>. I put the stylesheets and javascripts of this template into the folder #{Rails.root}/vendor/assets/tshop. So for example, I can access a stylesheet at #{Rails.root}/vendor/assets/tshop/stylesheets/style.css from the url <a href="http://localhost:3000/assets/stylesheets/style.css">http://localhost:3000/assets/stylesheets/style.css</a></p>
+
+<p>My folder structure is like following figure,</p>
+
+<p><img src="/images/rails_vendor_folder.png"></p>
+
+<p>According to the <a href="http://edgeguides.rubyonrails.org/asset_pipeline.html#using-index-files">Rails documents</a>, I should create a file index.js and index.css under #{Rails.root}/vendor/assets/tshop, but that doesn&rsquo;t work for me. Actually I named the files as tshop.js and tshop.css.scss, as the figure above. So in the application.css and application.js I chould load the tshop library by calling,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="c">/*</span>
+</span><span class='line'><span class="c"> ...</span>
+</span><span class='line'><span class="c"> *= require tshop</span>
+</span><span class='line'><span class="c"> ...</span>
+</span><span class='line'><span class="c"> */</span>
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p> and</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'> <span class="c1">//= require tshop</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And in the tshop.css.scss, I could load the file #{Rails.root}/vendor/assets/tshop/stylesheets/style.css by using following code,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="c">/*</span>
+</span><span class='line'><span class="c"> ...</span>
+</span><span class='line'><span class="c"> *= require stylesheets/style</span>
+</span><span class='line'><span class="c"> ...</span>
+</span><span class='line'><span class="c"> */</span>
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p> And in tshop.js, the file #{Rails.root}/vendor/assets/tshop/javascripts/script.js could be loaded by following code,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'> <span class="c1">//= require javascripts/script</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In the templates, I need to change the background image url, for example, in style.css,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="nc">.parallax-image-2</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">background</span><span class="o">:</span> <span class="sx">url(&quot;/assets/stylesheets/parallax/people-collage.jpg&quot;)</span> <span class="k">fixed</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">background-attachment</span><span class="o">:</span> <span class="k">fixed</span><span class="p">;</span><span class="c">/* IE FIX */</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This image file will be in #{Rails.root}/vendor/assets/tshop/stylesheets/parallax/people-collage.jpg.</p>
+
+<p>Here are the organization I used for my Rails 4 application. The point is to use <em>library.css</em> and <em>library.js</em> to name the index files instead of index.css and index.js.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Andy Wang</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-08-17T21:15:28+09:30" pubdate data-updated="true">Aug 17<span>th</span>, 2014</time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://climber2002.github.io/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/" data-via="" data-counturl="http://climber2002.github.io/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/05/26/integrate-postgis-and-google-maps-in-rails-part-2/" title="Previous Post: Integrate PostGIS and Google maps in Rails Part 2">&laquo; Integrate PostGIS and Google maps in Rails Part 2</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/08/24/digging-rails-how-rails-initializes-itself/" title="Next Post: Digging Rails - How Rails initializes itself">Digging Rails - How Rails initializes itself &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/02/09/deploy-rails-application-on-ubuntu-14-dot-04-part-2/">Deploy Rails Application on Ubuntu 14.04 Part 2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/08/deploy-rails-application-on-ubuntu-14-dot-04/">Deploy Rails application on Ubuntu 14.04 Part 1</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/">Change data files location on Ubuntu 14.04</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize/">Capybara integration tests with JQuery selectize</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server/">Depoly a rails 4 application on an Amazon EC2 server</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - Andy Wang -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a>.</span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'climber2002';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://climber2002.github.io/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/';
+        var disqus_url = 'http://climber2002.github.io/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

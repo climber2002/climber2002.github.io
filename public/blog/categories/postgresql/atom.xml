@@ -1,0 +1,1374 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: postgresql | AprilTouch]]></title>
+  <link href="http://climber2002.github.io/blog/categories/postgresql/atom.xml" rel="self"/>
+  <link href="http://climber2002.github.io/"/>
+  <updated>2015-02-12T09:20:01+10:30</updated>
+  <id>http://climber2002.github.io/</id>
+  <author>
+    <name><![CDATA[Andy Wang]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Deploy Rails Application on Ubuntu 14.04 Part 2]]></title>
+    <link href="http://climber2002.github.io/blog/2015/02/09/deploy-rails-application-on-ubuntu-14-dot-04-part-2/"/>
+    <updated>2015-02-09T21:27:23+10:30</updated>
+    <id>http://climber2002.github.io/blog/2015/02/09/deploy-rails-application-on-ubuntu-14-dot-04-part-2</id>
+    <content type="html"><![CDATA[<p>In <a href="http://climber2002.github.io/blog/2015/02/08/deploy-rails-application-on-ubuntu-14-dot-04/">Part 1</a> we have installed Nginx PostgreSQL, and also Monit. In this part I will show how to deploy the application through capistrano.</p>
+
+<p>In this part we will execute many commands, some will be executed in the host machine (our Laptop or iMac for example), and some will be executed in the Vagrant VM. I will show different prompt when executing. On host machine the prompt will be like <strong>host:~/rails_projects/deploy_sample$</strong>, and on VM the prompt will be <strong>vagrant@vagrant-ubuntu-trusty-64:~$</strong>, or if we su as deploy, it will be <strong>deploy@vagrant-ubuntu-trusty-64:~$</strong></p>
+
+<h1>Create deploy user</h1>
+
+<p>Just like we use an user <em>postgres</em> to manage our database, we should also use a standalone user to manage our application. We name this user <em>deploy</em>. And now let&rsquo;s create this user.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>vagrant@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>sudo adduser &amp;mdash;ingroup sudo deploy
+</span><span class='line'>Adding user &lt;code&gt;deploy<span class="s1">&#39; ...</span>
+</span><span class='line'><span class="s1">Adding new user&lt;/code&gt;deploy&#39;</span> <span class="o">(</span>1002<span class="o">)</span> with group &lt;code&gt;sudo<span class="s1">&#39; ...</span>
+</span><span class='line'><span class="s1">Creating home directory&lt;/code&gt;/home/deploy&#39;</span> &amp;hellip;
+</span><span class='line'>Copying files from <span class="sb">`</span>/etc/skel<span class="err">&#39;</span> &amp;hellip;
+</span><span class='line'>Enter new UNIX password:
+</span><span class='line'>Retype new UNIX password:
+</span><span class='line'>passwd: password updated successfully
+</span><span class='line'>Changing the user information <span class="k">for </span>deploy
+</span><span class='line'>Enter the new value, or press ENTER <span class="k">for </span>the default
+</span><span class='line'>  Full Name <span class="o">[]</span>:
+</span><span class='line'>  Room Number <span class="o">[]</span>:
+</span><span class='line'>  Work Phone <span class="o">[]</span>:
+</span><span class='line'>  Home Phone <span class="o">[]</span>:
+</span><span class='line'>  Other <span class="o">[]</span>:
+</span><span class='line'>Is the information correct? <span class="o">[</span>Y/n<span class="o">]</span> Y
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Set a password for <em>deploy</em> user and accept all default options.</p>
+
+<p>Since we already add <em>deploy</em> user to sudo group. It can run sudo commands. However the user needs to input his password. When we run the capistrano deploy command later, it will run sudo commands. So I want to update this user so he doesn&rsquo;t need to type password when run sodo commands. For this we need to update the <strong>/etc/sudoers</strong> file. It&rsquo;s recommended to use the application <strong>visudo</strong> to update it.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;vagrant@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>sudo visodu&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Add the following line to this file, and then type <em>Ctrl + O</em> to save it as /etc/sudoers, and type <em>Ctrl + X</em> to exit.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;deploy  <span class="nv">ALL</span><span class="o">=(</span>ALL:ALL<span class="o">)</span> NOPASSWD:ALL&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Notice that since we already add <em>deploy</em> user to sudo group, this line should be added under the line <strong>%sudo   ALL=(ALL:ALL) ALL</strong> so it will take effect.</p>
+
+<p>Our deployment organization is like following figure,</p>
+
+<p><img src="/images/deploy_structure.png"></p>
+
+<p>Our host communicates with VM by SSH, and also when the VM sync code from github, it also uses SSH. So we need two public/private keypairs here.</p>
+
+<p>Let&rsquo;s firstly generate a keypair for <em>deploy</em> user in VM. The public key for this keypair will be configured in github so the VM can download code from github.</p>
+
+<p>Let&rsquo;s firstly su as deploy</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;vagrant@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>su deploy
+</span><span class='line'>Password:
+</span><span class='line'>deploy@vagrant-ubuntu-trusty-64:/home/vagrant<span class="nv">$&lt;</span>/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now we go to the ~/.ssh folder and create a keypair.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;deploy@vagrant-ubuntu-trusty-64:/home/vagrant<span class="nv">$ </span><span class="nb">cd</span> ~
+</span><span class='line'>deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>mkdir .ssh
+</span><span class='line'>deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span><span class="nb">cd</span> .ssh
+</span><span class='line'>deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>ssh-keygen -t rsa -b 4096 -C &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;&amp;#109;&amp;#x61;&amp;#105;&amp;#x6c;&amp;#x74;&amp;#x6f;&amp;#x3a;&amp;#99;&amp;#108;&amp;#105;&amp;#x6d;&amp;#x62;&amp;#101;&amp;#x72;&amp;#x32;&amp;#x30;&amp;#48;&amp;#50;&amp;#x40;&amp;#103;&amp;#x6d;&amp;#97;&amp;#x69;&amp;#x6c;&amp;#x2e;&amp;#x63;&amp;#x6f;&amp;#x6d;&quot;</span>&gt;&amp;#x63;&amp;#108;&amp;#105;&amp;#x6d;&amp;#98;&amp;#101;&amp;#114;&amp;#x32;&amp;#x30;&amp;#x30;&amp;#x32;&amp;#64;&amp;#x67;&amp;#109;&amp;#x61;&amp;#105;&amp;#108;&amp;#46;&amp;#x63;&amp;#111;&amp;#x6d;&lt;/a&gt;&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Accept default options, and after generation two files should be created, <strong>id_rsa</strong> and <strong>id_rsa.pub</strong>.</p>
+
+<p>We can run <strong>cat id_rsa.pub</strong> and copy its content, and then configure this key in github.</p>
+
+<p>In github, choose Settings &ndash;> SSH keys &ndash;> Add SSH key, and paste the public key, as the following snapshot.</p>
+
+<p><img src="/images/github_add_ssh_key.png"></p>
+
+<p>Now we need to add the key of our host to the Vagrant VM.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>host<span class="nv">$ </span>ls -l ~/.ssh
+</span><span class='line'>-rw&amp;mdash;&amp;mdash;&amp;mdash;&amp;ndash;  1 andywang  staff  1679 Jun 25  2014 id_rsa
+</span><span class='line'>-rw-r&amp;mdash;r&amp;mdash;  1 andywang  staff   403 Jun 25  2014 id_rsa.pub
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Normally you should already have <strong>id_rsa</strong> and <strong>id_rsa.pub</strong>. If not run the <em>ssh-keygen</em> again in host to generate the SSH key.</p>
+
+<p>And then lets copy the content of id_rsa.pub and copy it to VM&rsquo;s <strong>~/.ssh/authorized_keys</strong>. If this file doesn&rsquo;t exist, create it.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>deploy@vagrant-ubuntu-trusty-64:~/.ssh<span class="nv">$ </span>vi authorized_keys
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>And also I updated the ssh config file <strong>/etc/ssh/sshd_config</strong> and changed the <strong>PasswordAuthentication yes</strong> to <strong>PasswordAuthentication no</strong> so we disable the password authentication.</p>
+
+<p>After that let&rsquo;s restart ssh service</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>deploy@vagrant-ubuntu-trusty-64:~/.ssh<span class="nv">$ </span>sudo service ssh restart
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now from your host server, you should be able to ssh into the Vagrant VM.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>host<span class="nv">$ </span>ssh &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;&amp;#x6d;&amp;#97;&amp;#105;&amp;#x6c;&amp;#x74;&amp;#111;&amp;#58;&amp;#x64;&amp;#x65;&amp;#112;&amp;#108;&amp;#x6f;&amp;#121;&amp;#x40;&amp;#x31;&amp;#57;&amp;#x32;&amp;#46;&amp;#49;&amp;#54;&amp;#x38;&amp;#46;&amp;#50;&amp;#50;&amp;#x2e;&amp;#49;&amp;#48;&quot;</span>&gt;&amp;#x64;&amp;#x65;&amp;#112;&amp;#108;&amp;#111;&amp;#121;&amp;#x40;&amp;#x31;&amp;#57;&amp;#x32;&amp;#46;&amp;#x31;&amp;#54;&amp;#56;&amp;#x2e;&amp;#x32;&amp;#50;&amp;#46;&amp;#x31;&amp;#48;&lt;/a&gt;&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;The authenticity of host &amp;lsquo;192.168.22.10 <span class="o">(</span>192.168.22.10<span class="o">)</span>&amp;rsquo; can&amp;rsquo;t be established.
+</span><span class='line'>RSA key fingerprint is b1:e4:e0:42:a1:37:0b:04:d3:88:8c:42:15:aa:00:b4.
+</span><span class='line'>Are you sure you want to <span class="k">continue </span>connecting <span class="o">(</span>yes/no<span class="o">)</span>? yes
+</span><span class='line'>Warning: Permanently added &amp;lsquo;192.168.22.10&amp;rsquo; <span class="o">(</span>RSA<span class="o">)</span> to the list of known hosts.
+</span><span class='line'>Welcome to Ubuntu 14.04.1 LTS <span class="o">(</span>GNU/Linux 3.13.0-45-generic x86_64<span class="o">)</span>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;ul&gt;
+</span><span class='line'>&lt;li&gt;Documentation:  &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;https://help.ubuntu.com/&quot;</span>&gt;https://help.ubuntu.com/&lt;/a&gt;&lt;/li&gt;
+</span><span class='line'>&lt;/ul&gt;
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;  System information as of Mon Feb  9 12:25:47 UTC 2015&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;  System load:  0.0               Processes:           96
+</span><span class='line'>  Usage of /:   3.1% of 39.34GB   Users logged in:     2
+</span><span class='line'>  Memory usage: 33%               IP address <span class="k">for </span>eth0: 10.0.2.15
+</span><span class='line'>  Swap usage:   0%                IP address <span class="k">for </span>eth1: 192.168.22.10&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;  Graph this data and manage this system at:&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;pre&gt;&lt;code&gt;https://landscape.canonical.com/
+</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;  Get cloud support with Ubuntu Advantage Cloud Guest:&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;pre&gt;&lt;code&gt;http://www.ubuntu.com/business/services/cloud
+</span><span class='line'>&lt;/code&gt;&lt;/pre&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;Last login: Mon Feb  9 12:25:48 2015 from 192.168.22.1
+</span><span class='line'>deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>sudo ls
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h1>Rbenv</h1>
+
+<p>Now we install the Rbenv. We will use <a href="https://github.com/fesplugas/rbenv-installer">Rbenv installer</a> to ease our installation. Since we will use <em>deploy</em> user as our application owner. Make sure you firstly su as <em>deploy</em>.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>curl &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;https://raw.githubusercontent.com/fesplugas/rbenv-installer/master/bin/rbenv-installer&quot;</span>&gt;https://raw.githubusercontent.com/fesplugas/rbenv-installer/master/bin/rbenv-installer&lt;/a&gt; | bash&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>After the installation is complete, add following lines to <em>~/.bashrc</em>, pay attention that you need to add it at the top of the file. Since the script will return if it&rsquo;s not running interactively.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;export <span class="nv">RBENV_ROOT</span><span class="o">=</span>&amp;ldquo;<span class="k">${</span><span class="nv">HOME</span><span class="k">}</span>/.rbenv&amp;rdquo;&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;if <span class="o">[</span> -d &amp;ldquo;<span class="k">${</span><span class="nv">RBENV_ROOT</span><span class="k">}</span>&amp;rdquo; <span class="o">]</span>; <span class="k">then</span>
+</span><span class='line'><span class="k">  </span><span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span>&amp;ldquo;<span class="k">${</span><span class="nv">RBENV_ROOT</span><span class="k">}</span>/bin:<span class="k">${</span><span class="nv">PATH</span><span class="k">}</span>&amp;rdquo;
+</span><span class='line'>  <span class="nb">eval</span> &amp;ldquo;<span class="k">$(</span>rbenv init &amp;ndash;<span class="k">)</span>&amp;rdquo;
+</span><span class='line'><span class="k">fi</span>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>After we run <strong>. ~/.bashrc</strong> to take the change into effect.</p>
+
+<p>Now we need to install some required packages on Ubuntu.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>rbenv bootstrap-ubuntu-12-04&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>After the necessary packages are installed, lets install Ruby 2.1.4</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>rbenv install 2.1.4
+</span><span class='line'>deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>rbenv global 2.1.4&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>This will download and compile Ruby 2.1.4 so it will take some time. Let&rsquo;s grab a cup of coffee~~</p>
+
+<h1>Install bundler</h1>
+
+<p>After installed ruby 2.1.4 let&rsquo;s install bundler</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>gem install bundler&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h1>Create the application directory</h1>
+
+<p>For my application, I want to deploy the application in <strong>/product</strong> folder, so let&rsquo;s create that folder and change the owner to <em>deploy</em></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>sudo mkdir /product
+</span><span class='line'>deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>sudo chown -R deploy:sudo /product&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h1>Deploy with Capistrano</h1>
+
+<p>Now we will try to deploy with Capistrano. We will use the <a href="https://github.com/TalkingQuickly/capistrano-3-rails-template">capistrano 3 template</a> to help us. Don&rsquo;t worry if you don&rsquo;t fully understand, I will explain it in next part.</p>
+
+<p>Now firstly let&rsquo;s clone the capistrano template in our host station. For me, both this project and the <em>deploy_sample</em> project are in the same folder which is <em>~/rails_projects</em></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;host:~/rails_projects<span class="nv">$ </span>git clone &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;https://github.com/TalkingQuickly/capistrano-3-rails-template.git&quot;</span>&gt;https://github.com/TalkingQuickly/capistrano-3-rails-template.git&lt;/a&gt;&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>And then in <em>Gemfile</em> of our <em>deploy_sample</em> project, let&rsquo;s add the necessary gems.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;Use Unicorn as the app server&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">gem</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">unicorn</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;gem &amp;lsquo;capistrano&amp;rsquo;, &amp;lsquo;~&gt; 3.1.0&amp;rsquo;, group: :development&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">rails</span> <span class="n">specific</span> <span class="n">capistrano</span> <span class="n">funcitons</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;gem &amp;lsquo;capistrano-rails&amp;rsquo;, &amp;lsquo;~&gt; 1.1.0&amp;rsquo;, group: :development&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">integrate</span> <span class="n">bundler</span> <span class="n">with</span> <span class="n">capistrano</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;gem &amp;lsquo;capistrano-bundler&amp;rsquo;, group: :development&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="k">if</span> <span class="n">you</span> <span class="n">are</span> <span class="n">using</span> <span class="no">RBENV</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;gem &amp;lsquo;capistrano-rbenv&amp;rsquo;, &amp;ldquo;~&gt; 2.0&amp;rdquo;, group: :development&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>After that let&rsquo;s run <strong>bundle install</strong> to install all the gems.</p>
+
+<p>The capistrano 3 templates added some customized tasks, so lets copy all the files from the template to our project.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;host:~/rails_projects/deploy_sample<span class="nv">$ </span>cp ../capistrano-3-rails-template/Capfile .
+</span><span class='line'>host:~/rails_projects/deploy_sample<span class="nv">$ </span>cp -r ../capistrano-3-rails-template/config/ ./config
+</span><span class='line'>host:~/rails_projects/deploy_sample<span class="nv">$ </span>cp -r ../capistrano-3-rails-template/lib/ ./lib&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h2>Copy secrets.yml</h2>
+
+<p>The Capistrano templates has some template files in <em>config/shared</em> folder, these files will be copied to a shared folder in VM when we run the task <strong>deploy:setup_config</strong>. Notice that we also want <em>secrets.yml</em> to be in the shared folder, so it won&rsquo;t be committed in our git repository. So let&rsquo;s copy this file into shared folder also. We change the filename to secrets.yml.erb as the task will render the erb file to secrets.yml during setup.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;host:~/rails_projects/deploy_sample<span class="nv">$ </span>cp config/secrets.yml config/deploy/shared/secrets.yml.erb&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now we need to update the <em>config/deploy.rb</em> file as following,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+<span class='line-number'>127</span>
+<span class='line-number'>128</span>
+<span class='line-number'>129</span>
+<span class='line-number'>130</span>
+<span class='line-number'>131</span>
+<span class='line-number'>132</span>
+<span class='line-number'>133</span>
+<span class='line-number'>134</span>
+<span class='line-number'>135</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;set :application, &amp;lsquo;deploy_sample&amp;rsquo;</span>
+</span><span class='line'><span class="sr">set :deploy_user, &amp;lsquo;deploy&amp;rsquo;&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">setup</span> <span class="n">repo</span> <span class="n">details</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;set :scm, :git</span>
+</span><span class='line'><span class="sr">set :repo_url, &amp;lsquo;git@github.com:climber2002/</span><span class="n">deploy_sample</span><span class="o">.</span><span class="n">git</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;setup rbenv.&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">set</span> <span class="ss">:rbenv_type</span><span class="p">,</span> <span class="ss">:user</span>
+</span><span class='line'><span class="n">set</span> <span class="ss">:rbenv_ruby</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="mi">2</span><span class="o">.</span><span class="mi">1</span><span class="o">.</span><span class="mi">4</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
+</span><span class='line'><span class="n">set</span> <span class="ss">:rbenv_prefix</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="no">RBENV_ROOT</span><span class="o">=</span><span class="c1">#{fetch(:rbenv_path)} RBENV_VERSION=#{fetch(:rbenv_ruby)} #{fetch(:rbenv_path)}/bin/rbenv exec&amp;rdquo;</span>
+</span><span class='line'><span class="n">set</span> <span class="ss">:rbenv_map_bins</span><span class="p">,</span> <span class="sx">%w{rake gem bundle ruby rails}</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;how many old releases do we want to keep, not much&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">set</span> <span class="ss">:keep_releases</span><span class="p">,</span> <span class="mi">5</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;files we want symlinking to specific entries in shared&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">set</span> <span class="ss">:linked_files</span><span class="p">,</span> <span class="sx">%w{config/database.yml config/secrets.yml}</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;dirs we want symlinking to shared&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">set</span> <span class="ss">:linked_dirs</span><span class="p">,</span> <span class="sx">%w{bin log tmp/pids tmp/cache tmp/sockets vendor/bundle public/system}</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;what specs should be run before deployment is allowed to&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">continue</span><span class="p">,</span> <span class="n">see</span> <span class="n">lib</span><span class="o">/</span><span class="n">capistrano</span><span class="o">/</span><span class="n">tasks</span><span class="o">/</span><span class="n">run_tests</span><span class="o">.</span><span class="n">cap</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;set :tests, []&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">which</span> <span class="n">config</span> <span class="n">files</span> <span class="n">should</span> <span class="n">be</span> <span class="n">copied</span> <span class="n">by</span> <span class="ss">deploy</span><span class="p">:</span><span class="n">setup_config</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;see documentation in lib/</span><span class="n">capistrano</span><span class="o">/</span><span class="n">tasks</span><span class="o">/</span><span class="n">setup_config</span><span class="o">.</span><span class="n">cap</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;for details of operations&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">set</span><span class="p">(</span><span class="ss">:config_files</span><span class="p">,</span> <span class="sx">%w(</span>
+</span><span class='line'><span class="sx">  nginx.conf</span>
+</span><span class='line'><span class="sx">  database.example.yml</span>
+</span><span class='line'><span class="sx">  log_rotation</span>
+</span><span class='line'><span class="sx">  monit</span>
+</span><span class='line'><span class="sx">  unicorn.rb</span>
+</span><span class='line'><span class="sx">  unicorn_init.sh</span>
+</span><span class='line'><span class="sx">  secrets.yml</span>
+</span><span class='line'><span class="sx">)</span><span class="p">)</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;which config files should be made executable after copying&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">by</span> <span class="ss">deploy</span><span class="p">:</span><span class="n">setup_config</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;set(:executable_config_files, %w(</span>
+</span><span class='line'><span class="sr">  unicorn_init.sh</span>
+</span><span class='line'><span class="sr">))&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">files</span> <span class="n">which</span> <span class="n">need</span> <span class="n">to</span> <span class="n">be</span> <span class="n">symlinked</span> <span class="n">to</span> <span class="n">other</span> <span class="n">parts</span> <span class="n">of</span> <span class="n">the</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;filesystem. For example nginx virtualhosts, log rotation&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">init</span> <span class="n">scripts</span> <span class="n">etc</span><span class="o">.</span> <span class="no">The</span> <span class="n">full_app_name</span> <span class="n">variable</span> <span class="n">isn</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="n">t</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;available at this point so we use a custom template &lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">tag</span> <span class="ow">and</span> <span class="k">then</span> <span class="n">add</span> <span class="n">it</span> <span class="n">at</span> <span class="n">run</span> <span class="n">time</span><span class="o">.</span><span class="n">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;set(:symlinks, [</span>
+</span><span class='line'><span class="sr">  {&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="ss">source</span><span class="p">:</span> <span class="s2">&quot;nginx.conf&quot;</span><span class="p">,</span>
+</span><span class='line'><span class="ss">link</span><span class="p">:</span> <span class="s2">&quot;/etc/nginx/sites-enabled/&quot;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="p">},</span>
+</span><span class='line'>  <span class="p">{</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;source: &quot;unicorn_init.sh&quot;,</span>
+</span><span class='line'><span class="sr">link: &quot;/e</span><span class="n">tc</span><span class="o">/</span><span class="n">init</span><span class="o">.</span><span class="n">d</span><span class="o">/</span><span class="n">unicorn_</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="s2">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;p&gt;  },</span>
+</span><span class='line'><span class="s2">  {&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;pre&gt;&lt;code&gt;source: &quot;</span><span class="n">log_rotation</span><span class="s2">&quot;,</span>
+</span><span class='line'><span class="s2">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;p&gt;   link: &amp;ldquo;/etc/logrotate.d/&amp;rdquo;</span>
+</span><span class='line'><span class="s2">  },</span>
+</span><span class='line'><span class="s2">  {&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;pre&gt;&lt;code&gt;source: &quot;</span><span class="n">monit</span><span class="s2">&quot;,</span>
+</span><span class='line'><span class="s2">link: &quot;</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">monit</span><span class="o">/</span><span class="n">conf</span><span class="o">.</span><span class="n">d</span><span class="o">/.</span><span class="n">conf</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="s2">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;p&gt;  }</span>
+</span><span class='line'><span class="s2">])&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;h1&gt;this:&lt;/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;h1&gt;&lt;a href=&quot;</span><span class="ss">http</span><span class="p">:</span><span class="sr">//</span><span class="n">www</span><span class="o">.</span><span class="n">capistranorb</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">documentation</span><span class="o">/</span><span class="n">getting</span><span class="o">-</span><span class="n">started</span><span class="o">/</span><span class="n">flow</span><span class="o">/</span><span class="s2">&quot;&gt;http://www.capistranorb.com/documentation/getting-started/flow/&lt;/a&gt;&lt;/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;h1&gt;is worth reading for a quick overview of what tasks are called&lt;/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;h1&gt;and when for &lt;code&gt;cap stage deploy&lt;/code&gt;&lt;/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;p&gt;namespace :deploy do</span>
+</span><span class='line'><span class="s2">  # make sure we&amp;rsquo;re deploying what we think we&amp;rsquo;re deploying</span>
+</span><span class='line'><span class="s2">  before :deploy, &amp;ldquo;deploy:check_revision&amp;rdquo;</span>
+</span><span class='line'><span class="s2">  # only allow a deploy with passing tests to deployed</span>
+</span><span class='line'><span class="s2">  before :deploy, &amp;ldquo;deploy:run_tests&amp;rdquo;</span>
+</span><span class='line'><span class="s2">  # compile assets locally then rsync</span>
+</span><span class='line'><span class="s2">  after &amp;lsquo;deploy:symlink:shared&amp;rsquo;, &amp;lsquo;deploy:compile_assets_locally&amp;rsquo;</span>
+</span><span class='line'><span class="s2">  after :finishing, &amp;lsquo;deploy:cleanup&amp;rsquo;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;p&gt;  # remove the default nginx configuration as it will tend</span>
+</span><span class='line'><span class="s2">  # to conflict with our configs.</span>
+</span><span class='line'><span class="s2">  before &amp;lsquo;deploy:setup_config&amp;rsquo;, &amp;lsquo;nginx:remove_default_vhost&amp;rsquo;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;p&gt;  # reload nginx to it will pick up any modified vhosts from</span>
+</span><span class='line'><span class="s2">  # setup_config</span>
+</span><span class='line'><span class="s2">  after &amp;lsquo;deploy:setup_config&amp;rsquo;, &amp;lsquo;nginx:reload&amp;rsquo;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;p&gt;  # Restart monit so it will pick up any monit configurations</span>
+</span><span class='line'><span class="s2">  # we&amp;rsquo;ve added</span>
+</span><span class='line'><span class="s2">  after &amp;lsquo;deploy:setup_config&amp;rsquo;, &amp;lsquo;monit:restart&amp;rsquo;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;p&gt;  # As of Capistrano 3.1, the &lt;code&gt;deploy:restart&lt;/code&gt; task is not called</span>
+</span><span class='line'><span class="s2">  # automatically.</span>
+</span><span class='line'><span class="s2">  after &amp;lsquo;deploy:publishing&amp;rsquo;, &amp;lsquo;deploy:restart&amp;rsquo;</span>
+</span><span class='line'><span class="s2">end&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We changed the following things,
+1. We changed the <em>application</em> to <strong>deploy_sample</strong>, which is our application name
+2. We changed <em>repo_url</em> to <strong>git@github.com:climber2002/deploy_sample.git</strong>, which is our git repository
+3. We changed the <em>rbenv_type</em> from <strong>:system</strong> to <strong>:user</strong>, and <em>rbenv_ruby</em> to <strong>2.1.4</strong>, which is the version we installed just now
+4. We changed the <em>linked_files</em> to add secrets.yml, the linked files will be stored in share folder but they will be created a symbolic link in config folder.
+5. We changed the config_files to add secrets.yml, since we also want to copy this file to shared folder.</p>
+
+<p>Now let&rsquo;s update <em>config/deploy/production.rb</em> file as following,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;set :stage, :production</span>
+</span><span class='line'><span class="sr">set :branch, &amp;ldquo;master&amp;rdquo;&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="no">This</span> <span class="n">is</span> <span class="n">used</span> <span class="k">in</span> <span class="n">the</span> <span class="no">Nginx</span> <span class="no">VirtualHost</span> <span class="n">to</span> <span class="n">specify</span> <span class="n">which</span> <span class="n">domains</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;the app should appear on. If you don&amp;rsquo;t yet have DNS setup, you&amp;rsquo;ll&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">need</span> <span class="n">to</span> <span class="n">create</span> <span class="n">entries</span> <span class="k">in</span> <span class="n">your</span> <span class="n">local</span> <span class="no">Hosts</span> <span class="n">file</span> <span class="k">for</span> <span class="n">testing</span><span class="o">.</span><span class="n">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;set :server_name, &amp;ldquo;www.example.com example.com&amp;rdquo;&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">used</span> <span class="k">in</span> <span class="k">case</span> <span class="n">we</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="n">re</span> <span class="n">deploying</span> <span class="n">multiple</span> <span class="n">versions</span> <span class="n">of</span> <span class="n">the</span> <span class="n">same</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;app side by side. Also provides quick sanity checks when looking&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">at</span> <span class="n">filepaths</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;set :full_app_name, &amp;ldquo;</span><span class="si">#{</span><span class="n">fetch</span><span class="p">(</span><span class="ss">:application</span><span class="p">)</span><span class="si">}</span><span class="sr">_</span><span class="si">#{</span><span class="n">fetch</span><span class="p">(</span><span class="ss">:stage</span><span class="p">)</span><span class="si">}</span><span class="sr">&amp;rdquo;&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">server</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="mi">192</span><span class="o">.</span><span class="mi">168</span><span class="o">.</span><span class="mi">22</span><span class="o">.</span><span class="mi">10</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;,</span> <span class="ss">user</span><span class="p">:</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">deploy</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;,</span> <span class="ss">roles</span><span class="p">:</span> <span class="sx">%w{web app db}</span><span class="p">,</span> <span class="ss">primary</span><span class="p">:</span> <span class="kp">true</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;set :deploy_to, &amp;ldquo;/</span><span class="n">product</span><span class="o">/</span><span class="c1">#{fetch(:full_app_name)}&amp;rdquo;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">dont</span> <span class="n">try</span> <span class="ow">and</span> <span class="n">infer</span> <span class="n">something</span> <span class="n">as</span> <span class="n">important</span> <span class="n">as</span> <span class="n">environment</span> <span class="n">from</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;stage name.&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">set</span> <span class="ss">:rails_env</span><span class="p">,</span> <span class="ss">:production</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;number of unicorn workers, this will be reflected in&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">the</span> <span class="n">unicorn</span><span class="o">.</span><span class="n">rb</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">monit</span> <span class="n">configs</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;set :unicorn_worker_count, 5&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">whether</span> <span class="n">we</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="n">re</span> <span class="n">using</span> <span class="n">ssl</span> <span class="ow">or</span> <span class="ow">not</span><span class="p">,</span> <span class="n">used</span> <span class="k">for</span> <span class="n">building</span> <span class="n">nginx</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;config file&lt;/</span><span class="n">h1</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">set</span> <span class="ss">:enable_ssl</span><span class="p">,</span> <span class="kp">false</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We changed following things for this file
+1. We changed the <em>server</em> to <strong>192.168.22.10</strong>, which is our VM IP address.
+2. We changed <em>deploy_to</em> to <strong>/product/#{fetch(:full_app_name)}</strong> since we want to deploy to <strong>/product</strong> folder.</p>
+
+<p>During real deployment you should also change the <em>server_name</em> to the correct domain name for your server.</p>
+
+<p>Now let&rsquo;s run the command to setup deploy.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>host:~/rails_projects/deploy_sample<span class="nv">$ </span>bundle <span class="nb">exec </span>cap production deploy:setup_config
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>This step will copy all shared folders to <strong>/product/deploy_sample_production/shared/config</strong> folder, let&rsquo;s check that folder in our VM,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>deploy@vagrant-ubuntu-trusty-64:~/.ssh<span class="nv">$ </span><span class="nb">cd</span> /product/deploy_sample_production/shared/config
+</span><span class='line'>deploy@vagrant-ubuntu-trusty-64:/product/deploy_sample_production/shared/config<span class="nv">$ </span>ls -l
+</span><span class='line'>total 28
+</span><span class='line'>-rw-r&amp;mdash;&amp;mdash;&amp;ndash; 1 deploy sudo  203 Feb 10 04:45 database.example.yml
+</span><span class='line'>-rw-r&amp;mdash;&amp;mdash;&amp;ndash; 1 deploy sudo  188 Feb 10 04:45 log_rotation
+</span><span class='line'>-rw-r&amp;mdash;&amp;mdash;&amp;ndash; 1 deploy sudo 2629 Feb 10 04:45 monit
+</span><span class='line'>-rw-r&amp;mdash;&amp;mdash;&amp;ndash; 1 deploy sudo  645 Feb 10 04:45 nginx.conf
+</span><span class='line'>-rw-r&amp;mdash;&amp;mdash;&amp;ndash; 1 deploy sudo  935 Feb 10 04:45 secrets.yml
+</span><span class='line'>-rwxr-x&amp;mdash;x 1 deploy sudo 2001 Feb 10 04:45 unicorn_init.sh
+</span><span class='line'>-rw-r&amp;mdash;&amp;mdash;&amp;ndash; 1 deploy sudo 1333 Feb 10 04:45 unicorn.rb
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We can see that some files are copied to the <strong>/product/deploy_sample_production/shared/config</strong> folder. Now we need to update the database.yml and secrets.yml.</p>
+
+<p>For database.yml, let&rsquo;s firstly copy the database.example.yml to database.yml</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;deploy@vagrant-ubuntu-trusty-64:/product/deploy_sample_production/shared/config<span class="nv">$ </span>cp database.example.yml database.yml
+</span><span class='line'>deploy@vagrant-ubuntu-trusty-64:/product/deploy_sample_production/shared/config<span class="nv">$ </span>vi database.yml&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We changed the content as following,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="l-Scalar-Plain">&lt;p&gt;production</span><span class="p-Indicator">:</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">adapter</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">postgresql</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">timeout</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">5000</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">encoding</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">utf8</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">reconnect</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">false</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">database</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">deploy_sample_production</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">pool</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">5</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">username</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">deploy_sample</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">password</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">secret</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">host</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">localhost</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">port</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">5432&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="l-Scalar-Plain">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We set the username and password to the value we created in Part 1, and also we set host to localhost since we installed database and application on same server.</p>
+
+<p>Now we need to update secrets.yml, firstly lets generate a secret from our project folder</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>host:~/rails_projects/deploy_sample<span class="nv">$ </span>rake secret
+</span><span class='line'>9f529340b1a34f223cb7a6fd2cf0d0d039ed5d03fe3d2b2787cc712585ffcee22e14e6136486356b12f383bc48f231896d556da131bd8c8d8bcf17bbc9ef7048
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now we copy this value to secrets.yml, of course you can also use an environment variable. After update our secrets.yml look like this,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="l-Scalar-Plain">&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="l-Scalar-Plain">&lt;p&gt;development</span><span class="p-Indicator">:</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">secret_key_base</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">75b397c3479019e0d5b2c7e3f57660c501369ffa4232958bcde366dc08e86b2f227fb1a57e172eccafc37fcfd5616909d4105d0d07069a4d061abf58a5745eef&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="l-Scalar-Plain">&lt;p&gt;test</span><span class="p-Indicator">:</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">secret_key_base</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">351180e5d983a83fa207f7df16e8509ad55910bab6d4e7a9e94dd3e80f8385fc8d8f5b1101fd2e565d2a0afb340917ac245d2ef69e00686e6eb6044ad92b3104&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="l-Scalar-Plain">&lt;h1&gt;Do not keep production secrets in the repository,&lt;/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="l-Scalar-Plain">&lt;h1&gt;instead read values from the environment.&lt;/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="l-Scalar-Plain">&lt;p&gt;production</span><span class="p-Indicator">:</span>
+</span><span class='line'>  <span class="l-Scalar-Plain">secret_key_base</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">9f529340b1a34f223cb7a6fd2cf0d0d039ed5d03fe3d2b2787cc712585ffcee22e14e6136486356b12f383bc48f231896d556da131bd8c8d8bcf17bbc9ef7048&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="l-Scalar-Plain">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>the production:secret_key_base is set to the value we just created.</p>
+
+<p>Now all preparation has been done, now let&rsquo;s do the deploy!</p>
+
+<p>Let&rsquo;s run following command,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;host:~/rails_projects/deploy_sample<span class="nv">$ </span>bundle <span class="nb">exec </span>cap production deploy&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>If everything runs correctly, after a long logs the deployment should be successful. And from your browser you can access <a href="http://192.168.22.10/articles">http://192.168.22.10/articles</a> to see the Article scaffold we&rsquo;ve created.</p>
+
+<p><img src="/images/deploy_sample.png"></p>
+
+<h1>Summary</h1>
+
+<p>In this part we&rsquo;ve introduced the steps to deploy by using Capistrano 3. And we utilized a Capistrano template. But you may be wondering what Capistrano has done for us. So in next part I will introduct what has been done in this template.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Deploy Rails application on Ubuntu 14.04 Part 1]]></title>
+    <link href="http://climber2002.github.io/blog/2015/02/08/deploy-rails-application-on-ubuntu-14-dot-04/"/>
+    <updated>2015-02-08T22:03:52+10:30</updated>
+    <id>http://climber2002.github.io/blog/2015/02/08/deploy-rails-application-on-ubuntu-14-dot-04</id>
+    <content type="html"><![CDATA[<p>In <a href="http://climber2002.github.io/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server/">one of my previous post</a> I described how to do the deployment manually on an Amazon EC2 server. And in this new series of posts I want to introduce how to deploy a Ruby on Rails 4.2 application on a Ubuntu 14.04 server from start to finish. I know there are lots of tutorials on the internet and even several books on deploying rails, however they are either outdated or not very clear how to do the deployment step by step. So in this series I will try to describe as clear as possible for each step.</p>
+
+<p>In this first part I will describe how to install the web server and database. Here I will use Nginx, Unicorn and PostgreSQL.</p>
+
+<h1>Application</h1>
+
+<p>To demonstrate the deployment, I will create a sample Rails 4.2 application called deploy_sample.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>rails &lt;em&gt;4.2&lt;/em&gt; new deploy_sample -d postgresql
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>And then I update the .gitignore file to exclude database.yml and secrets.yml from committing to repository.</p>
+
+<p>Add the following lines to .gitignore</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p>/config/database.yml
+</span><span class='line'>/config/secrets.yml&lt;/p>
+</span><span class='line'>
+</span><span class='line'>&lt;p></span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>And then we copy the database.yml and secrets.yml to an example yml so let&rsquo;s say if your colleagues need to work on this project, they could copy the example yml back and set their configurations.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;<span class="nv">$ </span>cp ./config/database.yml ./config/database.example.yml
+</span><span class='line'><span class="nv">$ </span>cp ./config/secrets.yml ./config/secrets.example.yml&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now let&rsquo;s init the git repository and commit our project.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;<span class="nv">$ </span>git init
+</span><span class='line'><span class="nv">$ </span>git add .
+</span><span class='line'><span class="nv">$ </span>git commit -m &amp;lsquo;initial commit&amp;rsquo;&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We will use github as our remote repository, so let&rsquo;s create a repository on github. And then follow its instructions, let&rsquo;s push the project.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;git remote add origin &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;https://github.com/climber2002/deploy_sample.git&quot;</span>&gt;https://github.com/climber2002/deploy_sample.git&lt;/a&gt;
+</span><span class='line'>git push -u origin master&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>After that if we refresh the repository on github, we could see the content that we have committed, like the following snapshot.</p>
+
+<p><img src="/images/deploy_sample_github.png"></p>
+
+<p>Now let&rsquo;s create some models, for simplicity I will just create a model called <strong>Article</strong> using scaffold.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>bundle <span class="nb">exec </span>rails generate scaffold Article title content:text
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We can run the migrations and test the application is ok from accessing *<a href="http://localhost:3000*">http://localhost:3000*</a></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>bundle <span class="nb">exec </span>rake db:create
+</span><span class='line'>bundle <span class="nb">exec </span>rake db:migrate
+</span><span class='line'>bundle <span class="nb">exec </span>rails s
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>After we can commit our changes,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>git add .
+</span><span class='line'>git commit -m &amp;lsquo;add Article scaffold&amp;rsquo;
+</span><span class='line'>git push origin master
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Now this sample application will be used for our deployment</p>
+
+<h1>Vagrant</h1>
+
+<p>For demonstration I will use Vagrant to create a VM. But it should apply to any VPS too. Firstly you should install VirtualBox and Vagrant. The installation should be straight forward.</p>
+
+<p>Then we create an empty folder in <strong>~/Sites</strong> and init the Vagrant.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>mkdir ~/Sites/deploy_sample_vagrant
+</span><span class='line'><span class="nb">cd</span> ~/Sites/deploy_sample_vagrant/
+</span><span class='line'>vagrant init &amp;lsquo;ubuntu/trusty64&amp;rsquo;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The vagrant init command creates a new file called Vagantfile. This file is configured to use Ubuntu 14.04 LTS server, codenamed “trusty”.</p>
+
+<p>And I want to assign this VM a private IP address, so we can access it from host server later. So open the Vagrantfile and add the following line.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>config.vm.network &ldquo;private_network&rdquo;, ip: &ldquo;192.168.22.10&rdquo;</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>It assigns the IP address &ldquo;192.168.22.10&rdquo; to the VM. Later we can see that we can access the nginx by using this IP address.</p>
+
+<p>Now in this folder we could type <strong>vagrant up</strong> to start the VM. If it&rsquo;s the first time it will take some time as it needs to download the VM image from the internet.</p>
+
+<p>After the VM is up, we could type <strong>vagrant ssh</strong> to ssh into the VM. Notice the prompt will change. If you are not sure whether you are in host server or the VM, just check the prompt.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>vagrant@vagrant-ubuntu-trusty-64:~$</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h1>Install Basic Software</h1>
+
+<p>After our VM is up we could install some basic software.</p>
+
+<p>So in the VM, we type following commands,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo apt-get -y update
+</span><span class='line'>sudo apt-get -y install curl wget unzip git ack-grep htop vim tmux software-properties-common
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h1>Nginx</h1>
+
+<p>Now let&rsquo;s install Nginx. As the default Nginx distribution may be out of date, let&rsquo;s add Nginx repository and install it.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;sudo add-apt-repository ppa:nginx/stable
+</span><span class='line'>sudo apt-get -y update
+</span><span class='line'>sudo apt-get -y install nginx&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>After installation Nginx should start automatically. We could check its status by executing <strong>sudo service nginx status</strong>. And we could also access <a href="http://192.168.22.10">http://192.168.22.10</a> from our browser.</p>
+
+<p><img src="/images/nginx.png"></p>
+
+<h1>PostgreSQL</h1>
+
+<p>Now let&rsquo;s install PostgreSQL. And again we add another repository.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;sudo add-apt-repository ppa:pitti/postgresql
+</span><span class='line'>sudo apt-get -y update
+</span><span class='line'>sudo apt-get -y install postgresql libpq-dev&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The libpq-dev library is needed for building the &lsquo;pg&rsquo; rubygem.</p>
+
+<p>Installing PostgreSQL will create a user named &lsquo;postgres&rsquo;. This user is the owner of PostgreSQL.</p>
+
+<p>Let&rsquo;s create a password for postgres.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>sudo passwd postgres
+</span><span class='line'>Enter new UNIX password:
+</span><span class='line'>Retype new UNIX password:
+</span><span class='line'>passwd: password updated successfully
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>In PostgreSQL the user is represented by a Role. Now let&rsquo;s create a role named <em>deploy_sample</em>.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;<span class="nv">$ </span>sudo -u postgres psql&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;postgres<span class="o">=</span><span class="c"># create user deploy_sample with password &amp;lsquo;secret&amp;rsquo;;</span>
+</span><span class='line'>CREATE ROLE
+</span><span class='line'><span class="nv">postgres</span><span class="o">=</span><span class="c"># create database deploy_sample_production owner deploy_sample;</span>
+</span><span class='line'>CREATE DATABASE
+</span><span class='line'><span class="nv">postgres</span><span class="o">=</span><span class="c"># \q&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The above lines will create a user <em>deploy_sample</em> and a database <em>deploy_sample_production</em> and set deploy_sample as its owner. The last command <em>\q</em> is to exit psql.</p>
+
+<h1>Monit</h1>
+
+<p>In next part we will use <a href="https://github.com/TalkingQuickly/capistrano-3-rails-template">capistrano template</a> for our deployment. And in that template it will also deploy <a href="http://mmonit.com/monit/">Monit</a>. According to its official website, &ldquo;Monit is a small Open Source utility for managing and monitoring Unix systems. Monit conducts automatic maintenance and repair and can execute meaningful causal actions in error situations.&rdquo;</p>
+
+<p>So let&rsquo;s also install that.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;sudo apt-get -y install monit&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>After installation we can run <strong>sudo service monit status</strong> to confirm that monit service is already started.</p>
+
+<h1>Nodejs</h1>
+
+<p>We need a Javascript runtime so we are going to install Nodejs.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;sudo apt-get -y install nodejs&lt;/p&gt;
+</span><span class='line'>
+</span><span class='line'>&lt;p&gt;
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h1>Summary</h1>
+
+<p>In this part we setup a VM server and installed Nginx and PostgreSQL. In next part we will see how to deploy our rails app by using capistrano.</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Create Development Environment For PostgreSQL on Mavericks]]></title>
+    <link href="http://climber2002.github.io/blog/2013/12/09/create-development-environment-for-postgresql-on-mavericks/"/>
+    <updated>2013-12-09T01:10:04+10:30</updated>
+    <id>http://climber2002.github.io/blog/2013/12/09/create-development-environment-for-postgresql-on-mavericks</id>
+    <content type="html"><![CDATA[<p>Recently I bought a new MacBook Pro Retina with Mevericks installed. And here are the steps that I configure the development environment for PostgreSQL on this OS for my Ruby on Rails projects.</p>
+
+<h2>Download Postgres App</h2>
+
+<p>Download the Postgres App <a href="http://postgresapp.com/">here</a>, which is the quickest way to install PostgreSQL on Mac OS. My version is the latest version Postgres93.</p>
+
+<h2>Install XCode command line tools</h2>
+
+<p>Install XCode, and in the menu XCode &ndash;> &lsquo;Open Developer Tool&rsquo; &ndash;> &lsquo;More Developer Tool&rsquo;, Choose the &lsquo;Command Line Tools(OS X Mavericks) for Xcode&rsquo;, download the dmg file and install it.</p>
+
+<h2>Install pg gem</h2>
+
+<p>Install the pg gem with the following command,
+<code>
+gem install pg -- --with-pg-config=/Applications/Postgres93.app/Contents/MacOS/bin/pg_config
+</code>
+Notice the &mdash;with-pg-config params, otherwise you may get the following errors,</p>
+
+<p>```
+Building native extensions.  This could take a while&hellip;
+ERROR:  Error installing pg:
+  ERROR: Failed to build gem native extension.</p>
+
+<pre><code>/Users/andywang/.rvm/rubies/ruby-2.0.0-p353/bin/ruby extconf.rb
+</code></pre>
+
+<p>checking for pg_config&hellip; no
+No pg_config&hellip; trying anyway. If building fails, please try again with
+ &mdash;with-pg-config=/path/to/pg_config
+checking for libpq-fe.h&hellip; no
+Can&rsquo;t find the &lsquo;libpq-fe.h header
+<strong><em> extconf.rb failed </em></strong>
+Could not create Makefile due to some reason, probably lack of necessary
+libraries and/or headers.  Check the mkmf.log file for more details.  You may
+need configuration options.</p>
+
+<p>Provided configuration options:
+  &mdash;with-opt-dir
+  &mdash;with-opt-include
+  &mdash;without-opt-include=${opt-dir}/include
+  &mdash;with-opt-lib
+  &mdash;without-opt-lib=${opt-dir}/lib
+  &mdash;with-make-prog
+  &mdash;without-make-prog
+  &mdash;srcdir=.
+  &mdash;curdir
+  &mdash;ruby=/Users/andywang/.rvm/rubies/ruby-2.0.0-p353/bin/ruby
+  &mdash;with-pg
+  &mdash;without-pg
+  &mdash;with-pg-config
+  &mdash;without-pg-config
+  &mdash;with-pg_config
+  &mdash;without-pg_config
+  &mdash;with-pg-dir
+  &mdash;without-pg-dir
+  &mdash;with-pg-include
+  &mdash;without-pg-include=${pg-dir}/include
+  &mdash;with-pg-lib
+  &mdash;without-pg-lib=${pg-dir}/</p>
+
+<p>Gem files will remain installed in /Users/andywang/.rvm/gems/ruby-2.0.0-p353/gems/pg-0.17.0 for inspection.
+Results logged to /Users/andywang/.rvm/gems/ruby-2.0.0-p353/gems/pg-0.17.0/ext/gem_make.out
+```</p>
+
+<h2>Create role in PostgreSQL</h2>
+
+<p>Normally I want to create a specific role in the database and don&rsquo;t like the anonymous access. So in my database.yml, I have the following snippets,
+<code>yml
+development:
+  adapter: postgresql
+  database: ebilling_development
+  host: localhost
+  pool: 5
+  timeout: 5000
+  username: ebilling
+  password: ebilling
+</code></p>
+
+<p>So here for this project I have a user ebilling whose password is also ebilling, so I created the ebilling user with the following command,
+<code>
+/Applications/Postgres93.app/Contents/MacOS/bin/createuser ebilling
+</code></p>
+
+<p>And then open the psql console, and assign the user as superuser and password
+<code>
+andywang=# alter user ebilling superuser password 'ebilling';
+</code></p>
+
+<p>Now after bundle install, you can create the database with the rake command,
+<code>
+rake db:create
+</code></p>
+]]></content>
+  </entry>
+  
+</feed>
