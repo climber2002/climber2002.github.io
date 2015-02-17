@@ -9,7 +9,7 @@
   <meta name="author" content="Andy Wang">
 
   
-  <meta name="description" content="Recently I bought a new MacBook Pro Retina with Mevericks installed. And here are the steps that I configure the development environment for &hellip;">
+  <meta name="description" content="Recently I need to work on a Rails project which is to manage the public and private schools in Gabon, a small country in Africa. And I need to &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,101 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/05/18/postgis-and-google-maps-in-rails-part-1/">PostGIS and Google Maps in Rails Part 1</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-18T23:23:32+09:30" pubdate data-updated="true">May 18<span>th</span>, 2014</time>
+        
+         | <a href="/blog/2014/05/18/postgis-and-google-maps-in-rails-part-1/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Recently I need to work on a Rails project which is to manage the public and private schools in Gabon, a small country in Africa. And I need to integrate PostGIS and Google maps. I will create a series of blogs to share what I have done, and I will point out some common gotchas while integrate Rails with PostGIS and Google maps.</p>
+
+<h2>Books and Blogs</h2>
+
+<p>To work on PostGIS and Google Maps of course you need to learn them. This series is not a complete tutorial. To study PostGIS, the definite reference is <em>PostGIS in Action</em> by Regina O. Obe and Leo S. Hsu. Currently the second edition is in MEAP state and you can buy the ebook at <a href="http://manning.com/obe2/">manning website</a>. To study Google maps, the documentation at <a href="https://developers.google.com/maps/documentation/javascript/tutorial">google website</a> is already awesome, but if you prefer a book form, the book <em>Google Maps JavaScript API Cookbook</em> by Alper Dincer and Balkan Uraz is a good choice, which you can buy the kindle version at <a href="http://www.amazon.com/Google-Maps-JavaScript-API-Cookbook-ebook/dp/B00HJR6RD6">amazon</a></p>
+
+<p>In the project to integrate PostGIS with Rails, I utilized some rubygems from RGeo. The original author of those rubygems, Daniel Azuma, has created a series of articles on <a href="http://daniel-azuma.com/articles/georails">his website</a>, which is very helpful. Actually this series has been inspired from his works.</p>
+
+<h2>Let&rsquo;s start</h2>
+
+<p>In this first blog I&rsquo;ll describe how to create a rails project and how to create migrations to import GIS data from shape files to our database.</p>
+
+<h2>Install</h2>
+
+<p>To work on PostGIS of course you need to install it first. If you work on a Mac OS environment like me, using the <a href="http://postgresapp.com/">PostgreSQL App</a> is the easiest way. This package already includes PostGIS 2.1, so you just need to enable it, which we will introduce later.</p>
+
+<p>And since we use the <a href="https://github.com/rgeo/rgeo">RGeo</a> and some of its addons, you need to install <a href="http://trac.osgeo.org/geos">GEOS</a> and <a href="http://trac.osgeo.org/proj">Proj</a>, which RGeo depends on. For Mac users the easiest way is to install the frameworks <a href="http://www.kyngchaos.com/software:frameworks">here</a></p>
+
+<h2>Create the application</h2>
+
+<p>Now let&rsquo;s create a rails application and use PostgreSQL database (I use Rails 4.1).</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ rails new schoolpro --database==postgresql</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here my application name is schoolpro. Now open the Gemfile and add the <em>activerecord-postgis-adapter</em> gem.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">gem</span> <span class="s1">&#39;activerecord-postgis-adapter&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>And then in the database.yml, let&rsquo;s change the adapter from postgresql to postgis</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'>  <span class="l-Scalar-Plain">adapter</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">postgis</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now let&rsquo;s create the database by running <strong>rake db:create</strong></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ rake db:create</span></code></pre></td></tr></table></div></figure>
+
+
+<p>After the database is created, we need to enable the PostGIS extension by running following command</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>rake db:gis:setup</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2014/05/18/postgis-and-google-maps-in-rails-part-1/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -321,6 +416,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/02/16/deploy-rails-application-on-ubuntu-14-dot-04-part-3/">Deploy Rails Application on Ubuntu 14.04 Part 3</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/02/09/deploy-rails-application-on-ubuntu-14-dot-04-part-2/">Deploy Rails Application on Ubuntu 14.04 Part 2</a>
       </li>
     
@@ -334,10 +433,6 @@
     
       <li class="post">
         <a href="/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize/">Capybara integration tests with JQuery selectize</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server/">Depoly a rails 4 application on an Amazon EC2 server</a>
       </li>
     
   </ul>

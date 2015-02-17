@@ -9,7 +9,7 @@
   <meta name="author" content="Andy Wang">
 
   
-  <meta name="description" content="In Part 1 we have installed Nginx PostgreSQL, and also Monit. In this part I will show how to deploy the application through capistrano. In this part &hellip;">
+  <meta name="description" content="Here is the Part 3 of Deploying Rails Application on Ubuntu 14.04, and also the final part. In this part we will explain what the Capistrano template &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,304 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/02/16/deploy-rails-application-on-ubuntu-14-dot-04-part-3/">Deploy Rails Application on Ubuntu 14.04 Part 3</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-02-16T21:43:02+10:30" pubdate data-updated="true">Feb 16<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/02/16/deploy-rails-application-on-ubuntu-14-dot-04-part-3/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Here is the Part 3 of Deploying Rails Application on Ubuntu 14.04, and also the final part. In this part we will explain what the Capistrano template does.</p>
+
+<p>Capistrano is a remote server automation and deployment tool written in Ruby. Capistrano 3 extends Rake DSL with its own set of DSL. I recommend you read the documents on <a href="http://capistranorb.com/">Capistrano website</a>.</p>
+
+<h1>Install Capistrano</h1>
+
+<p>In <strong>Gemfile</strong> we add the following gems,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">gem</span> <span class="s1">&#39;capistrano&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 3.1.0&#39;</span><span class="p">,</span> <span class="ss">group</span><span class="p">:</span> <span class="ss">:development</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># rails specific capistrano funcitons</span>
+</span><span class='line'><span class="n">gem</span> <span class="s1">&#39;capistrano-rails&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 1.1.0&#39;</span><span class="p">,</span> <span class="ss">group</span><span class="p">:</span> <span class="ss">:development</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># integrate bundler with capistrano</span>
+</span><span class='line'><span class="n">gem</span> <span class="s1">&#39;capistrano-bundler&#39;</span><span class="p">,</span> <span class="ss">group</span><span class="p">:</span> <span class="ss">:development</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># if you are using RBENV</span>
+</span><span class='line'><span class="n">gem</span> <span class="s1">&#39;capistrano-rbenv&#39;</span><span class="p">,</span> <span class="s2">&quot;~&gt; 2.0&quot;</span><span class="p">,</span> <span class="ss">group</span><span class="p">:</span> <span class="ss">:development</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <em>capistrano-rails</em>, <em>capistrano-bundler</em>, and <em>capistrano-rbenv</em> are capistrano plugins. Let&rsquo;s focus on capistrano first.</p>
+
+<p>After running <strong>bundle install</strong>, if we run <strong>bundle exec cap install</strong>, it will generate following folders and files, actually when we copy the files from the capistrano template in part 2, it does the same thing.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>├──  Capfile
+</span><span class='line'>├── config
+</span><span class='line'>│   ├── deploy
+</span><span class='line'>│   │   ├── production.rb
+</span><span class='line'>│   │   └── staging.rb
+</span><span class='line'>│   └── deploy.rb
+</span><span class='line'>└── lib
+</span><span class='line'>    └── capistrano
+</span><span class='line'>            └── tasks</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>In Capfile, It requires all necessary files, and also it includes all customized tasks in <em>lib/capistrano/tasks</em>.</li>
+<li>Normally you have a production server and a staging server. So before you deploy new features to production server, you want to deploy to staging server first and after all QA are passed. So in <em>config/deploy.rb</em>, it defines the parameters that apply to all environments, and in <em>config/deploy/production.rb</em> and <em>config/deploy/staging.rb</em> it defines the parameters that apply to the specific environment. When we run <em>bundle exec cap production deploy</em>, it will load <em>config/deploy.rb</em> first, then <em>config/deploy/production.rb</em>, and then run the <strong>deploy</strong> rake task.</li>
+</ul>
+
+
+<h1>Understanding Capistrano</h1>
+
+<p>To understand Capistrano, the best way is to read its source code. Actually it&rsquo;s not that hard as the source code of Capistrano is pretty easy to understand.</p>
+
+<h2>DSL</h2>
+
+<p>Capistrano defines a DSL. For those interested, can check the capistrano source code in folder <em>lib/capistrano/dsl</em></p>
+
+<h3>Set attributes</h3>
+
+<p>You can set some attributes by using <strong>set</strong>, and then later use <strong>fetch</strong> to get the attribute value by key. In our sample application <em>config/deploy.rb</em>, you can see it sets a lot of attributes.</p>
+
+<p>The following code snippets illustrate its use.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">set</span> <span class="ss">:application</span><span class="p">,</span> <span class="s1">&#39;deploy_sample&#39;</span>
+</span><span class='line'><span class="n">set</span> <span class="ss">:scm</span><span class="p">,</span> <span class="ss">:git</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">fetch</span> <span class="ss">:application</span> <span class="c1"># if :application key doesn&#39;t exist, it will return nil</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">fetch</span> <span class="ss">:application</span><span class="p">,</span> <span class="s1">&#39;application_name&#39;</span> <span class="c1"># if the :application key doesn&#39;t exist, it will return default value &#39;application_name&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">set_if_empty</span> <span class="ss">:rbenv_type</span><span class="p">,</span> <span class="ss">:user</span> <span class="c1"># set only the :rbenv_type key is not defined</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Server and Roles</h3>
+
+<p>Think about our deployment, at least we need a database server, an application server which is unicorn, and a web server which is Nginx or Apache. Sometimes db, app and web are on the same server, sometimes they are installed on different servers. Capistrano defines these as roles. For example, in our sample application, we define one server which has three roles,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">server</span> <span class="s1">&#39;192.168.22.10&#39;</span><span class="p">,</span> <span class="ss">user</span><span class="p">:</span> <span class="s1">&#39;deploy&#39;</span><span class="p">,</span> <span class="ss">roles</span><span class="p">:</span> <span class="sx">%w{web app db}</span><span class="p">,</span> <span class="ss">primary</span><span class="p">:</span> <span class="kp">true</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So later if we want to want to do something on the server that acts as web and app role, we could use <strong>roles</strong> or <strong>release_roles</strong> method,</p>
+
+<p>For example, the following code will create directory on the server that act as web and app role,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">task</span> <span class="ss">:directories</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">on</span> <span class="n">release_roles</span> <span class="ss">:web</span><span class="p">,</span> <span class="ss">:app</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">execute</span> <span class="ss">:mkdir</span><span class="p">,</span> <span class="s1">&#39;-p&#39;</span><span class="p">,</span> <span class="n">shared_path</span><span class="p">,</span> <span class="n">releases_path</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>If the <em>web</em> and <em>app</em> role point to two different servers, each server will create the directory. If we use :all, it will get all servers.</p>
+
+<h2>Rake tasks</h2>
+
+<p>Capistrano 3 actually is an extension of Rake tasks. So when we run <strong>bundle exec cap production deploy</strong>, it will run the <strong>deploy</strong> Rake task.</p>
+
+<p>Let&rsquo;s have a look at the definition of the <strong>deploy</strong> task. It&rsquo;s in Capistrano source code <em>/lib/capistrano/tasks/framework.rake</em></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">desc</span> <span class="s1">&#39;Deploy a new release.&#39;</span>
+</span><span class='line'><span class="n">task</span> <span class="ss">:deploy</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">set</span><span class="p">(</span><span class="ss">:deploying</span><span class="p">,</span> <span class="kp">true</span><span class="p">)</span>
+</span><span class='line'>  <span class="sx">%w{ starting started</span>
+</span><span class='line'><span class="sx">      updating updated</span>
+</span><span class='line'><span class="sx">      publishing published</span>
+</span><span class='line'><span class="sx">      finishing finished }</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">task</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">invoke</span> <span class="s2">&quot;deploy:</span><span class="si">#{</span><span class="n">task</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So we can see that the <strong>deploy</strong> task runs the following 8 tasks in sequence,
+* deploy:starting
+* deploy:started
+* deploy:updating
+* deploy:updated
+* deploy:publishing
+* deploy:published
+* deploy:finishing
+* deploy:finished</p>
+
+<p>If you are interested you should check the source code of those tasks. For example, in task <em>deploy:updating</em> it will invoke <em>deploy:symlink:shared</em>, which in turns invokes <em>deploy:symlink:link_files</em>, let&rsquo;s see how this task is implemented</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">task</span> <span class="ss">:deploy</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">task</span> <span class="ss">:symlink</span> <span class="k">do</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">desc</span> <span class="s1">&#39;Symlink linked files&#39;</span>
+</span><span class='line'>    <span class="n">task</span> <span class="ss">:linked_files</span> <span class="k">do</span>
+</span><span class='line'>      <span class="k">next</span> <span class="k">unless</span> <span class="n">any?</span> <span class="ss">:linked_files</span>
+</span><span class='line'>      <span class="n">on</span> <span class="n">release_roles</span> <span class="ss">:all</span> <span class="k">do</span>
+</span><span class='line'>        <span class="n">execute</span> <span class="ss">:mkdir</span><span class="p">,</span> <span class="s1">&#39;-p&#39;</span><span class="p">,</span> <span class="n">linked_file_dirs</span><span class="p">(</span><span class="n">release_path</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">fetch</span><span class="p">(</span><span class="ss">:linked_files</span><span class="p">)</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">file</span><span class="o">|</span>
+</span><span class='line'>          <span class="n">target</span> <span class="o">=</span> <span class="n">release_path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">source</span> <span class="o">=</span> <span class="n">shared_path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+</span><span class='line'>          <span class="k">unless</span> <span class="nb">test</span> <span class="s2">&quot;[ -L </span><span class="si">#{</span><span class="n">target</span><span class="si">}</span><span class="s2"> ]&quot;</span>
+</span><span class='line'>            <span class="k">if</span> <span class="nb">test</span> <span class="s2">&quot;[ -f </span><span class="si">#{</span><span class="n">target</span><span class="si">}</span><span class="s2"> ]&quot;</span>
+</span><span class='line'>              <span class="n">execute</span> <span class="ss">:rm</span><span class="p">,</span> <span class="n">target</span>
+</span><span class='line'>            <span class="k">end</span>
+</span><span class='line'>            <span class="n">execute</span> <span class="ss">:ln</span><span class="p">,</span> <span class="s1">&#39;-s&#39;</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span>
+</span><span class='line'>          <span class="k">end</span>
+</span><span class='line'>        <span class="k">end</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can see that it will fetch the <em>linked_files</em> property, for our deploy sample application, we have set it to <em>%w{config/database.yml config/secrets.yml}</em>, so for each file, it will created a symbolic link in <em>release_path</em>, which points to the file in <em>shared_path</em>, where is release_path? Let&rsquo;s have a look at Capistrano source code <em>/lib/capistrano/dsl/paths.rb</em></p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">deploy_to</span>
+</span><span class='line'>  <span class="n">fetch</span><span class="p">(</span><span class="ss">:deploy_to</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">deploy_path</span>
+</span><span class='line'>  <span class="no">Pathname</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">deploy_to</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">current_path</span>
+</span><span class='line'>  <span class="n">deploy_path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;current&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">release_path</span>
+</span><span class='line'>  <span class="n">fetch</span><span class="p">(</span><span class="ss">:release_path</span><span class="p">,</span> <span class="n">current_path</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So the <em>release_path</em> by default is the <em>current_path</em>, which is the sub folder <em>current</em> under <em>deploy_path</em>, which is set by deploy_to. Since in deploy_sample application, we already set <em>deploy_to</em> to &ldquo;/product/#{fetch(:full_app_name)}&rdquo;, so for our case, <em>release_path</em> will be <strong>/product/deploy_sample_production/current</strong>.</p>
+
+<p>For ssh, Capistrano depends on <a href="https://github.com/capistrano/sshkit">sshkit</a>, if you are interested, you could check the documents on its website.</p>
+
+<p>In Capistrano we could customize the deploy process by injecting our own tasks. For example, in config/deploy.rb in our sample application, it defines</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">after</span> <span class="s1">&#39;deploy:symlink:shared&#39;</span><span class="p">,</span> <span class="s1">&#39;deploy:compile_assets_locally&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So after the task <em>deploy:symlink:shared</em>, it will run <em>deploy:compile_assets_locally</em>, which is to run <em>rake assets:precompile</em> locally and then upload the compiled assets to the server. You could use <em>before</em> or <em>after</em> to inject tasks before or after other tasks.</p>
+
+<p>So now you should have an idea how Capistrano works. It&rsquo;s just a series of Rake tasks which ssh to the server to execute commands to do the deployment. In my opinion the Capistrano source code is quite easy to understand, you could check more details if you like.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -3368,101 +3666,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/05/18/postgis-and-google-maps-in-rails-part-1/">PostGIS and Google Maps in Rails Part 1</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-05-18T23:23:32+09:30" pubdate data-updated="true">May 18<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/05/18/postgis-and-google-maps-in-rails-part-1/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Recently I need to work on a Rails project which is to manage the public and private schools in Gabon, a small country in Africa. And I need to integrate PostGIS and Google maps. I will create a series of blogs to share what I have done, and I will point out some common gotchas while integrate Rails with PostGIS and Google maps.</p>
-
-<h2>Books and Blogs</h2>
-
-<p>To work on PostGIS and Google Maps of course you need to learn them. This series is not a complete tutorial. To study PostGIS, the definite reference is <em>PostGIS in Action</em> by Regina O. Obe and Leo S. Hsu. Currently the second edition is in MEAP state and you can buy the ebook at <a href="http://manning.com/obe2/">manning website</a>. To study Google maps, the documentation at <a href="https://developers.google.com/maps/documentation/javascript/tutorial">google website</a> is already awesome, but if you prefer a book form, the book <em>Google Maps JavaScript API Cookbook</em> by Alper Dincer and Balkan Uraz is a good choice, which you can buy the kindle version at <a href="http://www.amazon.com/Google-Maps-JavaScript-API-Cookbook-ebook/dp/B00HJR6RD6">amazon</a></p>
-
-<p>In the project to integrate PostGIS with Rails, I utilized some rubygems from RGeo. The original author of those rubygems, Daniel Azuma, has created a series of articles on <a href="http://daniel-azuma.com/articles/georails">his website</a>, which is very helpful. Actually this series has been inspired from his works.</p>
-
-<h2>Let&rsquo;s start</h2>
-
-<p>In this first blog I&rsquo;ll describe how to create a rails project and how to create migrations to import GIS data from shape files to our database.</p>
-
-<h2>Install</h2>
-
-<p>To work on PostGIS of course you need to install it first. If you work on a Mac OS environment like me, using the <a href="http://postgresapp.com/">PostgreSQL App</a> is the easiest way. This package already includes PostGIS 2.1, so you just need to enable it, which we will introduce later.</p>
-
-<p>And since we use the <a href="https://github.com/rgeo/rgeo">RGeo</a> and some of its addons, you need to install <a href="http://trac.osgeo.org/geos">GEOS</a> and <a href="http://trac.osgeo.org/proj">Proj</a>, which RGeo depends on. For Mac users the easiest way is to install the frameworks <a href="http://www.kyngchaos.com/software:frameworks">here</a></p>
-
-<h2>Create the application</h2>
-
-<p>Now let&rsquo;s create a rails application and use PostgreSQL database (I use Rails 4.1).</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>$ rails new schoolpro --database==postgresql</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Here my application name is schoolpro. Now open the Gemfile and add the <em>activerecord-postgis-adapter</em> gem.</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">gem</span> <span class="s1">&#39;activerecord-postgis-adapter&#39;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>And then in the database.yml, let&rsquo;s change the adapter from postgresql to postgis</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='yaml'><span class='line'>  <span class="l-Scalar-Plain">adapter</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">postgis</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Now let&rsquo;s create the database by running <strong>rake db:create</strong></p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>$ rake db:create</span></code></pre></td></tr></table></div></figure>
-
-
-<p>After the database is created, we need to enable the PostGIS extension by running following command</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake db:gis:setup</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-</div>
-  
-  
-    <footer>
-      <a rel="full-article" href="/blog/2014/05/18/postgis-and-google-maps-in-rails-part-1/">Read on &rarr;</a>
-    </footer>
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -3478,6 +3681,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/02/16/deploy-rails-application-on-ubuntu-14-dot-04-part-3/">Deploy Rails Application on Ubuntu 14.04 Part 3</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/02/09/deploy-rails-application-on-ubuntu-14-dot-04-part-2/">Deploy Rails Application on Ubuntu 14.04 Part 2</a>
       </li>
     
@@ -3491,10 +3698,6 @@
     
       <li class="post">
         <a href="/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize/">Capybara integration tests with JQuery selectize</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server/">Depoly a rails 4 application on an Amazon EC2 server</a>
       </li>
     
   </ul>
