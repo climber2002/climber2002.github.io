@@ -4,7 +4,7 @@
   <title><![CDATA[AprilTouch]]></title>
   <link href="http://climber2002.github.io/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2015-02-21T20:26:38+10:30</updated>
+  <updated>2015-02-22T00:16:32+10:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -12,6 +12,796 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Digging Rails: How Rails finds your templates Part 1]]></title>
+    <link href="http://climber2002.github.io/blog/2015/02/21/how-rails-finds-your-templates-part-1/"/>
+    <updated>2015-02-21T20:35:52+10:30</updated>
+    <id>http://climber2002.github.io/blog/2015/02/21/how-rails-finds-your-templates-part-1</id>
+    <content type="html"><![CDATA[<p>Have you ever wondered for a Rails application, when you access an action in a controller, how Rails finds the template to render? For example, when the action <em>index</em> in <em>ArticlesController</em> is accessed, by default the template <em>app/views/articles/index.html.erb</em> will be selected and rendered. Recently I&rsquo;m digging the source code of Rails, and I invite you to walk through some source code in ActionPack and ActionView with me. And then I will show how the Rubygem <a href="https://github.com/bwillis/versioncake">versioncake</a> works by modifying the Rails configuration.</p>
+
+<p>In this first part we firstly check how the <strong>render</strong> works. Notice that we check Rails 4.2 source code. If you look at another version, the implementation may be slightly different.</p>
+
+<p>The entry point for the render is from the <strong>AbstractController::Rendering#render</strong> method. The <strong>AbstractController</strong> is a module shared by ActionController and ActionMailer. Since these two modules share a lot of functionalities, Rails extract those same functionalities into <strong>AbstractController</strong>. Let&rsquo;s have a look at this method.</p>
+
+<figure class='code'><figcaption><span>rails/actionpack/lib/abstract_controller/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">AbstractController</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Rendering</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Normalize arguments, options and then delegates render_to_body and</span>
+</span><span class='line'>    <span class="c1"># sticks the result in self.response_body.</span>
+</span><span class='line'>    <span class="c1"># :api: public</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">options</span> <span class="o">=</span> <span class="n">_normalize_render</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+</span><span class='line'>      <span class="nb">self</span><span class="o">.</span><span class="n">response_body</span> <span class="o">=</span> <span class="n">render_to_body</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">_process_format</span><span class="p">(</span><span class="n">rendered_format</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span> <span class="k">if</span> <span class="n">rendered_format</span>
+</span><span class='line'>      <span class="nb">self</span><span class="o">.</span><span class="n">response_body</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>In our controller, we could call <em>render</em> method directly. For example, we can call <em>render &lsquo;new&rsquo;</em> to render the <em>new.html.erb</em> template. Or if we don&rsquo;t call <em>render</em> explicitly, there is a module <strong>ActionController::ImplicitRender</strong> which will call a default render.</p>
+
+<figure class='code'><figcaption><span>rails/actionpack/lib/action_controller/metal/implicit_renderer.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">ActionController</span>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">ImplicitRender</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">send_action</span><span class="p">(</span><span class="nb">method</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">ret</span> <span class="o">=</span> <span class="k">super</span>
+</span><span class='line'>      <span class="n">default_render</span> <span class="k">unless</span> <span class="n">performed?</span>
+</span><span class='line'>      <span class="n">ret</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">default_render</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">render</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The send_action will be called when the action of a controller is triggered. It first calls super, then if in the action it doesn&rsquo;t render anything, the <em>performed?</em> will return false. So <em>default_render</em> is called. We can see that when call <em>default_render</em> it just calls <em>render</em> without any arguments.</p>
+
+<p>In <strong>AbstractController::Rendering#render</strong> method, it firstly calls <em>_normalize_render</em> then calls <em>render_to_body</em>. The <em>_normalize_render</em> returns an options object which is a Hash. In this part we will examine the <strong>_normalize_render</strong> method to see how the options is generated.</p>
+
+<p>Let&rsquo;s see how <strong>_normalize_render</strong> is implemented.</p>
+
+<figure class='code'><figcaption><span>rails/actionpack/lib/abstract_controller/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">AbstractController</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Rendering</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Normalize args and options.</span>
+</span><span class='line'>    <span class="c1"># :api: private</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">_normalize_render</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">options</span> <span class="o">=</span> <span class="n">_normalize_args</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+</span><span class='line'>      <span class="c1">#TODO: remove defined? when we restore AP &lt;=&gt; AV dependency</span>
+</span><span class='line'>      <span class="k">if</span> <span class="n">defined?</span><span class="p">(</span><span class="n">request</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">request</span> <span class="o">&amp;&amp;</span> <span class="n">request</span><span class="o">.</span><span class="n">variant</span><span class="o">.</span><span class="n">present?</span>
+</span><span class='line'>        <span class="n">options</span><span class="o">[</span><span class="ss">:variant</span><span class="o">]</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">variant</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>      <span class="n">_normalize_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">options</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We see that it calls <em>_normalize_args</em> and <em>_normalize_options</em> methods. The <em>_normalize_args</em> and <em>_normalize_options</em> have different purposes.</p>
+
+<h3>_normalize_args</h3>
+
+<p>The <strong>_normalize_args</strong> is to convert all args into an options hash. For example when we call <em>render</em> method, we could call like this,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">render</span> <span class="s1">&#39;new&#39;</span><span class="p">,</span> <span class="ss">status</span><span class="p">:</span> <span class="ss">:ok</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here the first argument &lsquo;new&rsquo; is a String, and <strong>_normalize_args</strong> is responsible to put this first argument in options hash and give it an appropriate key.</p>
+
+<p>Let&rsquo;s see how it&rsquo;s implemented.</p>
+
+<figure class='code'><figcaption><span>rails/actionpack/lib/abstract_controller/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">AbstractController</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Rendering</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Normalize args by converting render &quot;foo&quot; to render :action =&gt; &quot;foo&quot; and</span>
+</span><span class='line'>    <span class="c1"># render &quot;foo/bar&quot; to render :file =&gt; &quot;foo/bar&quot;.</span>
+</span><span class='line'>    <span class="c1"># :api: plugin</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">_normalize_args</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="kp">nil</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{})</span>
+</span><span class='line'>      <span class="k">if</span> <span class="n">action</span><span class="o">.</span><span class="n">is_a?</span> <span class="no">Hash</span>
+</span><span class='line'>        <span class="n">action</span>
+</span><span class='line'>      <span class="k">else</span>
+</span><span class='line'>        <span class="n">options</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We see that this method by default almost does nothing, if the action is a Hash, it returns action, otherwise if action is for example, a string, it returns the second parameter which is the options hash.</p>
+
+<p>Notice that ApplicationController includes some other modules which override this method, as we will see later.</p>
+
+<h3>_normalize_options</h3>
+
+<p>The <strong>_normalize_options</strong> method is for the modules to include other options. For a Rails application, the ApplicationController extends from <strong>ActionController::Base</strong>, and <strong>ActionController::Base</strong> includes a lot of modules, each module could override this method and add some other options.</p>
+
+<p>Let&rsquo;s firstly check how this method is implemented in <strong>AbstractController::Rendering</strong>.</p>
+
+<figure class='code'><figcaption><span>rails/actionpack/lib/abstract_controller/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">AbstractController</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Rendering</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Normalize options.</span>
+</span><span class='line'>    <span class="c1"># :api: plugin</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">_normalize_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">options</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>By default this method does nothing. But it will be overridden in other modules.</p>
+
+<h3>Override _normalize_args</h3>
+
+<p>Rails source code is complex, one reason is because there are many modules could override other modules&rsquo;s methods. For example, in a ArticlesController, let&rsquo;s see its ancestors,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="err">$</span> <span class="n">rails</span> <span class="n">c</span>
+</span><span class='line'><span class="no">Loading</span> <span class="n">development</span> <span class="n">environment</span> <span class="p">(</span><span class="no">Rails</span> <span class="mi">4</span><span class="o">.</span><span class="mi">2</span><span class="o">.</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'><span class="mi">2</span><span class="o">.</span><span class="mi">0</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">p353</span> <span class="p">:</span><span class="mo">001</span> <span class="o">&gt;</span> <span class="nb">puts</span> <span class="no">ArticlesController</span><span class="o">.</span><span class="n">ancestors</span>
+</span><span class='line'><span class="no">ArticlesController</span>
+</span><span class='line'><span class="c1">#&lt;Module:0x007f8f0a971800&gt;</span>
+</span><span class='line'><span class="no">ApplicationController</span>
+</span><span class='line'><span class="c1">#&lt;Module:0x007f8f0a8f93c8&gt;</span>
+</span><span class='line'><span class="c1">#&lt;Module:0x007f8f05465118&gt;</span>
+</span><span class='line'><span class="c1">#&lt;Module:0x007f8f05465140&gt;</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Base</span>
+</span><span class='line'><span class="ss">WebConsole</span><span class="p">:</span><span class="ss">:ControllerHelpers</span>
+</span><span class='line'><span class="ss">Turbolinks</span><span class="p">:</span><span class="ss">:XHRHeaders</span>
+</span><span class='line'><span class="ss">Turbolinks</span><span class="p">:</span><span class="ss">:Cookies</span>
+</span><span class='line'><span class="ss">Turbolinks</span><span class="p">:</span><span class="ss">:XDomainBlocker</span>
+</span><span class='line'><span class="ss">Turbolinks</span><span class="p">:</span><span class="ss">:Redirection</span>
+</span><span class='line'><span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Railties</span><span class="o">::</span><span class="no">ControllerRuntime</span>
+</span><span class='line'><span class="ss">ActionDispatch</span><span class="p">:</span><span class="ss">:Routing</span><span class="o">::</span><span class="ss">RouteSet</span><span class="p">:</span><span class="ss">:MountedHelpers</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:ParamsWrapper</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Instrumentation</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Rescue</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:HttpAuthentication</span><span class="o">::</span><span class="ss">Token</span><span class="p">:</span><span class="ss">:ControllerMethods</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:HttpAuthentication</span><span class="o">::</span><span class="ss">Digest</span><span class="p">:</span><span class="ss">:ControllerMethods</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:HttpAuthentication</span><span class="o">::</span><span class="ss">Basic</span><span class="p">:</span><span class="ss">:ControllerMethods</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:DataStreaming</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Streaming</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:ForceSSL</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:RequestForgeryProtection</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Flash</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Cookies</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:StrongParameters</span>
+</span><span class='line'><span class="ss">ActiveSupport</span><span class="p">:</span><span class="ss">:Rescuable</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:ImplicitRender</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:MimeResponds</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Caching</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Caching</span><span class="o">::</span><span class="no">Fragments</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Caching</span><span class="o">::</span><span class="no">ConfigMethods</span>
+</span><span class='line'><span class="ss">AbstractController</span><span class="p">:</span><span class="ss">:Callbacks</span>
+</span><span class='line'><span class="ss">ActiveSupport</span><span class="p">:</span><span class="ss">:Callbacks</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:EtagWithTemplateDigest</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:ConditionalGet</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Head</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Renderers</span><span class="o">::</span><span class="no">All</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Renderers</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Rendering</span>
+</span><span class='line'><span class="ss">ActionView</span><span class="p">:</span><span class="ss">:Layouts</span>
+</span><span class='line'><span class="ss">ActionView</span><span class="p">:</span><span class="ss">:Rendering</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Redirecting</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:RackDelegation</span>
+</span><span class='line'><span class="ss">ActiveSupport</span><span class="p">:</span><span class="ss">:Benchmarkable</span>
+</span><span class='line'><span class="ss">AbstractController</span><span class="p">:</span><span class="ss">:Logger</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:UrlFor</span>
+</span><span class='line'><span class="ss">AbstractController</span><span class="p">:</span><span class="ss">:UrlFor</span>
+</span><span class='line'><span class="ss">ActionDispatch</span><span class="p">:</span><span class="ss">:Routing</span><span class="o">::</span><span class="no">UrlFor</span>
+</span><span class='line'><span class="ss">ActionDispatch</span><span class="p">:</span><span class="ss">:Routing</span><span class="o">::</span><span class="no">PolymorphicRoutes</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:ModelNaming</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:HideActions</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Helpers</span>
+</span><span class='line'><span class="ss">AbstractController</span><span class="p">:</span><span class="ss">:Helpers</span>
+</span><span class='line'><span class="ss">AbstractController</span><span class="p">:</span><span class="ss">:AssetPaths</span>
+</span><span class='line'><span class="ss">AbstractController</span><span class="p">:</span><span class="ss">:Translation</span>
+</span><span class='line'><span class="ss">AbstractController</span><span class="p">:</span><span class="ss">:Rendering</span>
+</span><span class='line'><span class="ss">ActionView</span><span class="p">:</span><span class="ss">:ViewPaths</span>
+</span><span class='line'><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Metal</span>
+</span><span class='line'><span class="ss">AbstractController</span><span class="p">:</span><span class="ss">:Base</span>
+</span><span class='line'><span class="ss">ActiveSupport</span><span class="p">:</span><span class="ss">:Configurable</span>
+</span><span class='line'><span class="no">Object</span>
+</span><span class='line'><span class="ss">ActiveSupport</span><span class="p">:</span><span class="ss">:Dependencies</span><span class="o">::</span><span class="no">Loadable</span>
+</span><span class='line'><span class="ss">PP</span><span class="p">:</span><span class="ss">:ObjectMixin</span>
+</span><span class='line'><span class="ss">JSON</span><span class="p">:</span><span class="ss">:Ext</span><span class="o">::</span><span class="ss">Generator</span><span class="p">:</span><span class="ss">:GeneratorMethods</span><span class="o">::</span><span class="no">Object</span>
+</span><span class='line'><span class="no">Kernel</span>
+</span><span class='line'><span class="no">BasicObject</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can see that for a typical controller, it has a lot of ancestors and most of them are modules. All modules after <em>AbstractController::Rendering</em> could override its methods. I have created a gist to check which ancestors implement a method.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Module</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">ancestors_that_implement_instance_method</span><span class="p">(</span><span class="nb">instance_method</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">ancestors</span><span class="o">.</span><span class="n">find_all</span> <span class="k">do</span> <span class="o">|</span><span class="n">ancestor</span><span class="o">|</span>
+</span><span class='line'>      <span class="p">(</span><span class="n">ancestor</span><span class="o">.</span><span class="n">instance_methods</span><span class="p">(</span><span class="kp">false</span><span class="p">)</span> <span class="o">+</span> <span class="n">ancestor</span><span class="o">.</span><span class="n">private_instance_methods</span><span class="p">(</span><span class="kp">false</span><span class="p">))</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="nb">instance_method</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Run the above code in a rails console, then you can call <em>ClassName.ancestors_that_implement_instance_method</em> to check what ancestors implement a method.</p>
+
+<p>Let&rsquo;s first see what ancestors override the <em>_normalize_args</em> method,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="err">$</span> <span class="n">rails</span> <span class="n">c</span>
+</span><span class='line'><span class="no">Loading</span> <span class="n">development</span> <span class="n">environment</span> <span class="p">(</span><span class="no">Rails</span> <span class="mi">4</span><span class="o">.</span><span class="mi">2</span><span class="o">.</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'><span class="mi">2</span><span class="o">.</span><span class="mi">0</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">p353</span> <span class="p">:</span><span class="mo">013</span> <span class="o">&gt;</span>   <span class="no">ArticlesController</span><span class="o">.</span><span class="n">ancestors_that_implement_instance_method</span><span class="p">(</span><span class="ss">:_normalize_args</span><span class="p">)</span>
+</span><span class='line'> <span class="o">=&gt;</span> <span class="o">[</span><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Rendering</span><span class="p">,</span> <span class="ss">ActionView</span><span class="p">:</span><span class="ss">:Rendering</span><span class="p">,</span> <span class="ss">AbstractController</span><span class="p">:</span><span class="ss">:Rendering</span><span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Two modules override this instance method: <em>ActionView::Rendering</em> and <em>ActionController::Rendering</em>. Let&rsquo;s look them in order from top to down.</p>
+
+<p>Let&rsquo;s look at <em>ActionView::Rendering</em> first,</p>
+
+<figure class='code'><figcaption><span>actionview/lib/action_view/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">ActionView</span>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Rendering</span>
+</span><span class='line'>    <span class="c1"># Normalize args by converting render &quot;foo&quot; to render :action =&gt; &quot;foo&quot; and</span>
+</span><span class='line'>    <span class="c1"># render &quot;foo/bar&quot; to render :template =&gt; &quot;foo/bar&quot;.</span>
+</span><span class='line'>    <span class="c1"># :api: private</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">_normalize_args</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="kp">nil</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{})</span>
+</span><span class='line'>      <span class="n">options</span> <span class="o">=</span> <span class="k">super</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">case</span> <span class="n">action</span>
+</span><span class='line'>      <span class="k">when</span> <span class="no">NilClass</span>
+</span><span class='line'>      <span class="k">when</span> <span class="no">Hash</span>
+</span><span class='line'>        <span class="n">options</span> <span class="o">=</span> <span class="n">action</span>
+</span><span class='line'>      <span class="k">when</span> <span class="nb">String</span><span class="p">,</span> <span class="no">Symbol</span>
+</span><span class='line'>        <span class="n">action</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">to_s</span>
+</span><span class='line'>        <span class="n">key</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="sc">?/</span><span class="p">)</span> <span class="p">?</span> <span class="ss">:template</span> <span class="p">:</span> <span class="ss">:action</span>
+</span><span class='line'>        <span class="n">options</span><span class="o">[</span><span class="n">key</span><span class="o">]</span> <span class="o">=</span> <span class="n">action</span>
+</span><span class='line'>      <span class="k">else</span>
+</span><span class='line'>        <span class="n">options</span><span class="o">[</span><span class="ss">:partial</span><span class="o">]</span> <span class="o">=</span> <span class="n">action</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">options</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can see that for the first argument <em>action</em>, if it&rsquo;s a string and the string include &lsquo;/&rsquo;, the key for this argument is :file, and if it doesn&rsquo;t include &lsquo;/&rsquo;, the key is :action.</p>
+
+<p>So if we call <em>render &lsquo;new&rsquo;</em>, the options will be { action: &lsquo;new&rsquo; }, if we call <em>render &lsquo;articles/new&rsquo;</em>, the options will be { file: &lsquo;articles/new&rsquo; }</p>
+
+<p>Now let&rsquo;s see how <em>ActionController::Rendering</em> overrides this method</p>
+
+<figure class='code'><figcaption><span>actionpack/lib/action_controller/metal/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">ActionController</span>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Rendering</span>
+</span><span class='line'>    <span class="c1"># Normalize arguments by catching blocks and setting them on :update.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">_normalize_args</span><span class="p">(</span><span class="n">action</span><span class="o">=</span><span class="kp">nil</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="p">{},</span> <span class="o">&amp;</span><span class="n">blk</span><span class="p">)</span> <span class="c1">#:nodoc:</span>
+</span><span class='line'>      <span class="n">options</span> <span class="o">=</span> <span class="k">super</span>
+</span><span class='line'>      <span class="n">options</span><span class="o">[</span><span class="ss">:update</span><span class="o">]</span> <span class="o">=</span> <span class="n">blk</span> <span class="k">if</span> <span class="nb">block_given?</span>
+</span><span class='line'>      <span class="n">options</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can see that for this override, if the method is passed a block, it will set the block to options[:update]</p>
+
+<h3>Override _normalize_options</h3>
+
+<p>Just like <em>_normalize_args</em>, let&rsquo;s examine what modules override <em>_normalize_options</em>. We can see following modules implement <em>_normalize_options</em>: <em>[ActionController::Rendering, ActionView::Layouts, ActionView::Rendering, AbstractController::Rendering]</em>.</p>
+
+<p>Let&rsquo;s check <em>ActionView::Rendering</em> first,</p>
+
+<figure class='code'><figcaption><span>actionpack/lib/action_controller/metal/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">ActionView</span>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Rendering</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Normalize options.</span>
+</span><span class='line'>    <span class="c1"># :api: private</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">_normalize_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">options</span> <span class="o">=</span> <span class="k">super</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">if</span> <span class="n">options</span><span class="o">[</span><span class="ss">:partial</span><span class="o">]</span> <span class="o">==</span> <span class="kp">true</span>
+</span><span class='line'>        <span class="n">options</span><span class="o">[</span><span class="ss">:partial</span><span class="o">]</span> <span class="o">=</span> <span class="n">action_name</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">keys</span> <span class="o">&amp;</span> <span class="o">[</span><span class="ss">:partial</span><span class="p">,</span> <span class="ss">:file</span><span class="p">,</span> <span class="ss">:template</span><span class="o">]</span><span class="p">)</span><span class="o">.</span><span class="n">empty?</span>
+</span><span class='line'>        <span class="n">options</span><span class="o">[</span><span class="ss">:prefixes</span><span class="o">]</span> <span class="o">||=</span> <span class="n">_prefixes</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">options</span><span class="o">[</span><span class="ss">:template</span><span class="o">]</span> <span class="o">||=</span> <span class="p">(</span><span class="n">options</span><span class="o">[</span><span class="ss">:action</span><span class="o">]</span> <span class="o">||</span> <span class="n">action_name</span><span class="p">)</span><span class="o">.</span><span class="n">to_s</span>
+</span><span class='line'>      <span class="n">options</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can see that it addes three options by default,</p>
+
+<ul>
+<li>If the options[:partial] is true, then it will set options[:partial] to <em>action_name</em>, the <em>action_name</em> is just the name of the action that is triggered. For example, if the <em>index</em> action of ArticlesController is triggered, <em>action_name</em> will be <em>index</em>.</li>
+<li>If the options doesn&rsquo;t include :partial, :file or :template, it set options[:prefixes]. Let&rsquo;s see what&rsquo;s set for this :prefixes in a minute.</li>
+<li>It set the options[:template]. It&rsquo;s either passed from the arguments or just use the action_name.</li>
+</ul>
+
+
+<p>So what&rsquo;s in options[:prefixes], let&rsquo;s see how <em>_prefixes</em> method is implemented.</p>
+
+<p>The <strong>AbstractController::Rendering</strong> module includes <strong>ActionView::ViewPaths</strong> module. And <strong>_prefixes</strong> method is implemented there.</p>
+
+<p><strong>ActionView::ViewPaths</strong> is an important module which we will examine in more details in later parts. It&rsquo;s to manage the view paths for controllers. For example, by default Rails will append a view path <strong>#{Rails.root}app/views</strong> so the application knows to search templates in that specific view path.</p>
+
+<p>For now let&rsquo;s just focus on <strong>_prefixes</strong> method.</p>
+
+<figure class='code'><figcaption><span>rails/actionview/lib/action_view/view_paths.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">ActionView</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">ViewPaths</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># The prefixes used in render &quot;foo&quot; shortcuts.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">_prefixes</span> <span class="c1"># :nodoc:</span>
+</span><span class='line'>      <span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">_prefixes</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <strong>_prefixes</strong> just calls the class method <strong>_prefixes</strong>.</p>
+
+<figure class='code'><figcaption><span>rails/actionview/lib/action_view/view_paths.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">ActionView</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">ViewPaths</span>
+</span><span class='line'>    <span class="k">module</span> <span class="nn">ClassMethods</span>
+</span><span class='line'>      <span class="k">def</span> <span class="nf">_prefixes</span> <span class="c1"># :nodoc:</span>
+</span><span class='line'>        <span class="vi">@_prefixes</span> <span class="o">||=</span> <span class="k">begin</span>
+</span><span class='line'>          <span class="k">return</span> <span class="n">local_prefixes</span> <span class="k">if</span> <span class="n">superclass</span><span class="o">.</span><span class="n">abstract?</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="n">local_prefixes</span> <span class="o">+</span> <span class="n">superclass</span><span class="o">.</span><span class="n">_prefixes</span>
+</span><span class='line'>        <span class="k">end</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1"># Override this method in your controller if you want to change paths prefixes for finding views.</span>
+</span><span class='line'>      <span class="c1"># Prefixes defined here will still be added to parents&#39; &lt;tt&gt;._prefixes&lt;/tt&gt;.</span>
+</span><span class='line'>      <span class="k">def</span> <span class="nf">local_prefixes</span>
+</span><span class='line'>        <span class="o">[</span><span class="n">controller_path</span><span class="o">]</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Notice that Rails 4.2 implements that method and handles some deprecated parent prefixes. In above code I omitted that handling for clarity.</p>
+
+<p>This <strong>ActionView::ViewPaths._prefixes</strong> calls recursively. it append local_prefixes with superclass&rsquo;s _prefixes. The <strong>local_prefixes</strong> has just one element: <strong>controller_path</strong>.</p>
+
+<p>The <strong>controller_path</strong> method is very simple, it&rsquo;s implemented in <strong>AbstractController::Base</strong>. For example, for a controller <em>ArticlesController</em>, its controller_path will be <em>articles</em>, and for a controller <em>Articles::CommentsController</em>, its controller_path will be <em>articles/comments</em></p>
+
+<p>So the <strong>_prefixes</strong> method first gets it&rsquo;s parent prefixes, and then prepends the current controller_path to the front.</p>
+
+<p>For example, if our application has a <em>ArticlesController</em>, in our rails controller, we can call the following code to show the <em>_prefixes</em>.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="err">$</span> <span class="n">rails</span> <span class="n">c</span>
+</span><span class='line'><span class="no">Loading</span> <span class="n">development</span> <span class="n">environment</span> <span class="p">(</span><span class="no">Rails</span> <span class="mi">4</span><span class="o">.</span><span class="mi">2</span><span class="o">.</span><span class="mi">0</span><span class="p">)</span>
+</span><span class='line'><span class="mi">2</span><span class="o">.</span><span class="mi">0</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">p353</span> <span class="p">:</span><span class="mo">001</span> <span class="o">&gt;</span> <span class="no">ArticlesController</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="ss">:_prefixes</span><span class="p">)</span>
+</span><span class='line'> <span class="o">=&gt;</span> <span class="o">[</span><span class="s2">&quot;articles&quot;</span><span class="p">,</span> <span class="s2">&quot;application&quot;</span><span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We see that the prefixes contains two elements: articles and application. It&rsquo;s because the ApplicationController extends from ActionController::Base, but ActionController::Base is abstract.</p>
+
+<p>So now we can see that for <em>ArticlesController#index</em> action, when we just call <em>render</em> without any arguments, the options will contains following elements,</p>
+
+<ul>
+<li><strong>:prefixes</strong> : array [&ldquo;articles&rdquo;, &ldquo;application&rdquo;]</li>
+<li><strong>:template</strong> : string &ldquo;index&rdquo;</li>
+</ul>
+
+
+<p>Now let&rsquo;s see next one, how <strong>ActionView::Layouts</strong> overrides <strong>_normalize_options</strong> method,</p>
+
+<figure class='code'><figcaption><span>rails/actionview/lib/action_view/layouts.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">ActionView</span>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Layouts</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">_normalize_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span> <span class="c1"># :nodoc:</span>
+</span><span class='line'>      <span class="k">super</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">if</span> <span class="n">_include_layout?</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">layout</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="ss">:layout</span><span class="p">)</span> <span class="p">{</span> <span class="ss">:default</span> <span class="p">}</span>
+</span><span class='line'>        <span class="n">options</span><span class="o">[</span><span class="ss">:layout</span><span class="o">]</span> <span class="o">=</span> <span class="n">_layout_for_option</span><span class="p">(</span><span class="n">layout</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can see that if the options[:layout] is not set, the default layout is :default. And then options[:layout] is set to the result returned by <em>_layout_for_option</em>.</p>
+
+<p>If you are interested you could check how <strong>_layout_for_options</strong> is implemented. When this module searches for the layout it will search <em>&ldquo;app/views/layouts/#{class_name.underscore}.rb&rdquo;</em> first, if it doesn&rsquo;t found, then it will search super class. Since when a rails application is generated, an application.html.erb will be put in <em>app/views/layouts</em> and since by default all controllers&#8217; parent is ApplicationController, so by default this layout will be used.</p>
+
+<p>Finally let&rsquo;s see how <strong>ActionController::Rendering</strong> overrides <strong>_normalize_options</strong></p>
+
+<figure class='code'><figcaption><span>rails/actionpack/lib/action_controller/metal/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">ActionController</span>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Rendering</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Normalize both text and status options.</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">_normalize_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span> <span class="c1">#:nodoc:</span>
+</span><span class='line'>      <span class="n">_normalize_text</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">if</span> <span class="n">options</span><span class="o">[</span><span class="ss">:html</span><span class="o">]</span>
+</span><span class='line'>        <span class="n">options</span><span class="o">[</span><span class="ss">:html</span><span class="o">]</span> <span class="o">=</span> <span class="ss">ERB</span><span class="p">:</span><span class="ss">:Util</span><span class="o">.</span><span class="n">html_escape</span><span class="p">(</span><span class="n">options</span><span class="o">[</span><span class="ss">:html</span><span class="o">]</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="ss">:nothing</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">options</span><span class="o">[</span><span class="ss">:body</span><span class="o">]</span> <span class="o">=</span> <span class="kp">nil</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">if</span> <span class="n">options</span><span class="o">[</span><span class="ss">:status</span><span class="o">]</span>
+</span><span class='line'>        <span class="n">options</span><span class="o">[</span><span class="ss">:status</span><span class="o">]</span> <span class="o">=</span> <span class="ss">Rack</span><span class="p">:</span><span class="ss">:Utils</span><span class="o">.</span><span class="n">status_code</span><span class="p">(</span><span class="n">options</span><span class="o">[</span><span class="ss">:status</span><span class="o">]</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">super</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So this method just process :html, :nothing and :status options, which is straight forward.</p>
+
+<p>So finally let&rsquo;s see when we call <em>render</em> in <em>ArticlesController#index</em> without any arguments, the options will contains following values,</p>
+
+<ul>
+<li><strong>:prefixes</strong> : array [&ldquo;articles&rdquo;, &ldquo;application&rdquo;]</li>
+<li><strong>:template</strong> : string &ldquo;index&rdquo;</li>
+<li><strong>:layout</strong>   : A Proc when called will return &ldquo;app/views/layouts/application.html.erb&rdquo;</li>
+</ul>
+
+
+<p>Now we know how the options is normalized. And when Rails determines which template to render, it will extract details from the options. And we will look at how Rails determines template in later parts.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Deploy Rails Application on Ubuntu 14.04 Part 3]]></title>
