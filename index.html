@@ -112,7 +112,7 @@
 
 <p>Capistrano is a remote server automation and deployment tool written in Ruby. Capistrano 3 extends Rake DSL with its own set of DSL. I recommend you read the documents on <a href="http://capistranorb.com/">Capistrano website</a>.</p>
 
-<h1>Install Capistrano</h1>
+<h2>Install Capistrano</h2>
 
 <p>In <strong>Gemfile</strong> we add the following gems,</p>
 
@@ -169,15 +169,15 @@
 </ul>
 
 
-<h1>Understanding Capistrano</h1>
+<h2>Understanding Capistrano</h2>
 
 <p>To understand Capistrano, the best way is to read its source code. Actually it&rsquo;s not that hard as the source code of Capistrano is pretty easy to understand.</p>
 
-<h2>DSL</h2>
+<h3>DSL</h3>
 
 <p>Capistrano defines a DSL. For those interested, can check the capistrano source code in folder <em>lib/capistrano/dsl</em></p>
 
-<h3>Set attributes</h3>
+<h4>Set attributes</h4>
 
 <p>You can set some attributes by using <strong>set</strong>, and then later use <strong>fetch</strong> to get the attribute value by key. In our sample application <em>config/deploy.rb</em>, you can see it sets a lot of attributes.</p>
 
@@ -202,7 +202,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h3>Server and Roles</h3>
+<h4>Server and Roles</h4>
 
 <p>Think about our deployment, at least we need a database server, an application server which is unicorn, and a web server which is Nginx or Apache. Sometimes db, app and web are on the same server, sometimes they are installed on different servers. Capistrano defines these as roles. For example, in our sample application, we define one server which has three roles,</p>
 
@@ -230,7 +230,7 @@
 
 <p>If the <em>web</em> and <em>app</em> role point to two different servers, each server will create the directory. If we use :all, it will get all servers.</p>
 
-<h2>Rake tasks</h2>
+<h3>Rake tasks</h3>
 
 <p>Capistrano 3 actually is an extension of Rake tasks. So when we run <strong>bundle exec cap production deploy</strong>, it will run the <strong>deploy</strong> Rake task.</p>
 
