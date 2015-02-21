@@ -10,7 +10,7 @@ In [Part 1](http://climber2002.github.io/blog/2015/02/08/deploy-rails-applicatio
 
 In this part we will execute many commands, some will be executed in the host machine (our Laptop or iMac for example), and some will be executed in the Vagrant VM. I will show different prompt when executing. On host machine the prompt will be like **host:~/rails_projects/deploy_sample$**, and on VM the prompt will be **vagrant@vagrant-ubuntu-trusty-64:~$**, or if we su as deploy, it will be **deploy@vagrant-ubuntu-trusty-64:~$**
 
-# Create deploy user
+## Create deploy user
 Just like we use an user *postgres* to manage our database, we should also use a standalone user to manage our application. We name this user *deploy*. And now let's create this user.
 
 {% codeblock lang:bash %}
@@ -146,7 +146,7 @@ Last login: Mon Feb  9 12:25:48 2015 from 192.168.22.1
 deploy@vagrant-ubuntu-trusty-64:~$ sudo ls
 {% endcodeblock %}
 
-# Rbenv
+## Rbenv
 Now we install the Rbenv. We will use [Rbenv installer](https://github.com/fesplugas/rbenv-installer) to ease our installation. Since we will use *deploy* user as our application owner. Make sure you firstly su as *deploy*.
 
 {% codeblock lang:bash %}
@@ -189,7 +189,7 @@ deploy@vagrant-ubuntu-trusty-64:~$ rbenv global 2.1.4
 
 This will download and compile Ruby 2.1.4 so it will take some time. Let's grab a cup of coffee~~
 
-# Install bundler
+## Install bundler
 
 After installed ruby 2.1.4 let's install bundler
 
@@ -200,7 +200,7 @@ deploy@vagrant-ubuntu-trusty-64:~$ gem install bundler
 {% endcodeblock %}
 
 
-# Create the application directory
+## Create the application directory
 For my application, I want to deploy the application in **/product** folder, so let's create that folder and change the owner to *deploy*
 
 {% codeblock lang:bash %}
@@ -210,7 +210,7 @@ deploy@vagrant-ubuntu-trusty-64:~$ sudo chown -R deploy:sudo /product
 
 {% endcodeblock %}
 
-# Deploy with Capistrano
+## Deploy with Capistrano
 Now we will try to deploy with Capistrano. We will use the [capistrano 3 template](https://github.com/TalkingQuickly/capistrano-3-rails-template) to help us. Don't worry if you don't fully understand, I will explain it in next part.
 
 Now firstly let's clone the capistrano template in our host station. For me, both this project and the *deploy_sample* project are in the same folder which is *~/rails_projects*
@@ -255,7 +255,7 @@ host:~/rails_projects/deploy_sample$ cp -r ../capistrano-3-rails-template/lib/ .
 
 {% endcodeblock %}
 
-## Copy secrets.yml
+### Copy secrets.yml
 The Capistrano templates has some template files in *config/shared* folder, these files will be copied to a shared folder in VM when we run the task **deploy:setup_config**. Notice that we also want *secrets.yml* to be in the shared folder, so it won't be committed in our git repository. So let's copy this file into shared folder also. We change the filename to secrets.yml.erb as the task will render the erb file to secrets.yml during setup.
 
 {% codeblock lang:bash %}
@@ -512,7 +512,7 @@ If everything runs correctly, after a long logs the deployment should be success
 
 {% img /images/deploy_sample.png %}
 
-# Summary
+## Summary
 In this part we've introduced the steps to deploy by using Capistrano 3. And we utilized a Capistrano template. But you may be wondering what Capistrano has done for us. So in next part I will introduct what has been done in this template.
 
 

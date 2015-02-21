@@ -10,7 +10,7 @@ Here is the Part 3 of Deploying Rails Application on Ubuntu 14.04, and also the 
 
 Capistrano is a remote server automation and deployment tool written in Ruby. Capistrano 3 extends Rake DSL with its own set of DSL. I recommend you read the documents on [Capistrano website](http://capistranorb.com/).
 
-# Install Capistrano
+## Install Capistrano
 In **Gemfile** we add the following gems,
 
 {% codeblock lang:ruby %}
@@ -47,14 +47,14 @@ After running **bundle install**, if we run **bundle exec cap install**, it will
 * In Capfile, It requires all necessary files, and also it includes all customized tasks in *lib/capistrano/tasks*. 
 * Normally you have a production server and a staging server. So before you deploy new features to production server, you want to deploy to staging server first and after all QA are passed. So in *config/deploy.rb*, it defines the parameters that apply to all environments, and in *config/deploy/production.rb* and *config/deploy/staging.rb* it defines the parameters that apply to the specific environment. When we run *bundle exec cap production deploy*, it will load *config/deploy.rb* first, then *config/deploy/production.rb*, and then run the **deploy** rake task.
 
-# Understanding Capistrano
+## Understanding Capistrano
 
 To understand Capistrano, the best way is to read its source code. Actually it's not that hard as the source code of Capistrano is pretty easy to understand.
 
-## DSL
+### DSL
 Capistrano defines a DSL. For those interested, can check the capistrano source code in folder *lib/capistrano/dsl*
 
-### Set attributes
+#### Set attributes
 You can set some attributes by using **set**, and then later use **fetch** to get the attribute value by key. In our sample application *config/deploy.rb*, you can see it sets a lot of attributes.
 
 The following code snippets illustrate its use.
@@ -72,7 +72,7 @@ set_if_empty :rbenv_type, :user # set only the :rbenv_type key is not defined
 
 {% endcodeblock %}
 
-### Server and Roles
+#### Server and Roles
 Think about our deployment, at least we need a database server, an application server which is unicorn, and a web server which is Nginx or Apache. Sometimes db, app and web are on the same server, sometimes they are installed on different servers. Capistrano defines these as roles. For example, in our sample application, we define one server which has three roles,
 
 {% codeblock lang:ruby %}
@@ -97,7 +97,7 @@ end
 
 If the *web* and *app* role point to two different servers, each server will create the directory. If we use :all, it will get all servers.
 
-## Rake tasks
+### Rake tasks
 Capistrano 3 actually is an extension of Rake tasks. So when we run **bundle exec cap production deploy**, it will run the **deploy** Rake task. 
 
 Let's have a look at the definition of the **deploy** task. It's in Capistrano source code */lib/capistrano/tasks/framework.rake*

@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Install and configure Postgresql on Ubuntu 14.04"
+title: "Configure Customized data directory for Postgresql on Ubuntu 14.04"
 date: 2015-02-07 20:01:19 +1030
 comments: true
 categories: 
@@ -8,7 +8,7 @@ categories:
 
 **PostgreSQL** is a very popular database in Rails world. Here I describe how to install and configure it on Ubuntu 14.04 server.
 
-# Install
+## Install
 Using apt-get to install PostgreSQL is very simple. Just execute the following two commands,
 
 {% codeblock lang:bash %}
@@ -50,7 +50,7 @@ drwxr-xr-x 3 postgres postgres  4096 Feb  7 09:26 ..
 
 {% endcodeblock %}
 
-# Configure new data directory
+## Configure new data directory
 
 Sometimes to improve performance, we want put postgres data files in its own disk. For example, we may mount a disk in folder **/database** and we want to put all postgres data file there. So let's do that.
 

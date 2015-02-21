@@ -11,7 +11,7 @@ In [one of my previous post](http://climber2002.github.io/blog/2014/09/07/depoly
 In this first part I will describe how to install the web server and database. Here I will use Nginx, Unicorn and PostgreSQL.
 
 
-# Application
+## Application
 To demonstrate the deployment, I will create a sample Rails 4.2 application called deploy_sample.
 
 {% codeblock lang:bash %}
@@ -85,7 +85,7 @@ git push origin master
 
 Now this sample application will be used for our deployment
 
-# Vagrant
+## Vagrant
 For demonstration I will use Vagrant to create a VM. But it should apply to any VPS too. Firstly you should install VirtualBox and Vagrant. The installation should be straight forward.
 
 Then we create an empty folder in **~/Sites** and init the Vagrant.
@@ -114,7 +114,7 @@ After the VM is up, we could type **vagrant ssh** to ssh into the VM. Notice the
 vagrant@vagrant-ubuntu-trusty-64:~$
 {% endcodeblock %}
 
-# Install Basic Software
+## Install Basic Software
 After our VM is up we could install some basic software.
 
 So in the VM, we type following commands,
@@ -124,7 +124,7 @@ sudo apt-get -y update
 sudo apt-get -y install curl wget unzip git ack-grep htop vim tmux software-properties-common
 {% endcodeblock %}
 
-# Nginx
+## Nginx
 Now let's install Nginx. As the default Nginx distribution may be out of date, let's add Nginx repository and install it.
 
 {% codeblock lang:bash %}
@@ -139,7 +139,7 @@ After installation Nginx should start automatically. We could check its status b
 
 {% img /images/nginx.png %}
 
-# PostgreSQL
+## PostgreSQL
 
 Now let's install PostgreSQL. And again we add another repository.
 
@@ -180,7 +180,7 @@ postgres=# \q
 
 The above lines will create a user *deploy_sample* and a database *deploy_sample_production* and set deploy_sample as its owner. The last command *\q* is to exit psql.
 
-# Monit
+## Monit
 In next part we will use [capistrano template](https://github.com/TalkingQuickly/capistrano-3-rails-template) for our deployment. And in that template it will also deploy [Monit](http://mmonit.com/monit/). According to its official website, "Monit is a small Open Source utility for managing and monitoring Unix systems. Monit conducts automatic maintenance and repair and can execute meaningful causal actions in error situations."
 
 So let's also install that.
@@ -193,7 +193,7 @@ sudo apt-get -y install monit
 
 After installation we can run **sudo service monit status** to confirm that monit service is already started.
 
-# Nodejs
+## Nodejs
 We need a Javascript runtime so we are going to install Nodejs.
 
 {% codeblock lang:bash %}
@@ -202,6 +202,6 @@ sudo apt-get -y install nodejs
 
 {% endcodeblock %}
 
-# Summary
+## Summary
 In this part we setup a VM server and installed Nginx and PostgreSQL. In next part we will see how to deploy our rails app by using capistrano.
 
