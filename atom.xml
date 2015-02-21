@@ -4,7 +4,7 @@
   <title><![CDATA[AprilTouch]]></title>
   <link href="http://climber2002.github.io/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2015-02-21T20:21:25+10:30</updated>
+  <updated>2015-02-21T20:26:38+10:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -291,7 +291,7 @@
 
 <p>In this part we will execute many commands, some will be executed in the host machine (our Laptop or iMac for example), and some will be executed in the Vagrant VM. I will show different prompt when executing. On host machine the prompt will be like <strong>host:~/rails_projects/deploy_sample$</strong>, and on VM the prompt will be <strong>vagrant@vagrant-ubuntu-trusty-64:~$</strong>, or if we su as deploy, it will be <strong>deploy@vagrant-ubuntu-trusty-64:~$</strong></p>
 
-<h1>Create deploy user</h1>
+<h2>Create deploy user</h2>
 
 <p>Just like we use an user <em>postgres</em> to manage our database, we should also use a standalone user to manage our application. We name this user <em>deploy</em>. And now let&rsquo;s create this user.</p>
 
@@ -476,7 +476,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h1>Rbenv</h1>
+<h2>Rbenv</h2>
 
 <p>Now we install the Rbenv. We will use <a href="https://github.com/fesplugas/rbenv-installer">Rbenv installer</a> to ease our installation. Since we will use <em>deploy</em> user as our application owner. Make sure you firstly su as <em>deploy</em>.</p>
 
@@ -522,7 +522,7 @@
 
 <p>This will download and compile Ruby 2.1.4 so it will take some time. Let&rsquo;s grab a cup of coffee~~</p>
 
-<h1>Install bundler</h1>
+<h2>Install bundler</h2>
 
 <p>After installed ruby 2.1.4 let&rsquo;s install bundler</p>
 
@@ -531,7 +531,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h1>Create the application directory</h1>
+<h2>Create the application directory</h2>
 
 <p>For my application, I want to deploy the application in <strong>/product</strong> folder, so let&rsquo;s create that folder and change the owner to <em>deploy</em></p>
 
@@ -542,7 +542,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h1>Deploy with Capistrano</h1>
+<h2>Deploy with Capistrano</h2>
 
 <p>Now we will try to deploy with Capistrano. We will use the <a href="https://github.com/TalkingQuickly/capistrano-3-rails-template">capistrano 3 template</a> to help us. Don&rsquo;t worry if you don&rsquo;t fully understand, I will explain it in next part.</p>
 
@@ -597,7 +597,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h2>Copy secrets.yml</h2>
+<h3>Copy secrets.yml</h3>
 
 <p>The Capistrano templates has some template files in <em>config/shared</em> folder, these files will be copied to a shared folder in VM when we run the task <strong>deploy:setup_config</strong>. Notice that we also want <em>secrets.yml</em> to be in the shared folder, so it won&rsquo;t be committed in our git repository. So let&rsquo;s copy this file into shared folder also. We change the filename to secrets.yml.erb as the task will render the erb file to secrets.yml during setup.</p>
 
@@ -1006,7 +1006,7 @@
 
 <p><img src="http://climber2002.github.io/images/deploy_sample.png"></p>
 
-<h1>Summary</h1>
+<h2>Summary</h2>
 
 <p>In this part we&rsquo;ve introduced the steps to deploy by using Capistrano 3. And we utilized a Capistrano template. But you may be wondering what Capistrano has done for us. So in next part I will introduct what has been done in this template.</p>
 ]]></content>
@@ -1021,7 +1021,7 @@
 
 <p>In this first part I will describe how to install the web server and database. Here I will use Nginx, Unicorn and PostgreSQL.</p>
 
-<h1>Application</h1>
+<h2>Application</h2>
 
 <p>To demonstrate the deployment, I will create a sample Rails 4.2 application called deploy_sample.</p>
 
@@ -1104,7 +1104,7 @@
 
 <p>Now this sample application will be used for our deployment</p>
 
-<h1>Vagrant</h1>
+<h2>Vagrant</h2>
 
 <p>For demonstration I will use Vagrant to create a VM. But it should apply to any VPS too. Firstly you should install VirtualBox and Vagrant. The installation should be straight forward.</p>
 
@@ -1137,7 +1137,7 @@
 </pre></td><td class='code'><pre><code class=''><span class='line'>vagrant@vagrant-ubuntu-trusty-64:~$</span></code></pre></td></tr></table></div></figure>
 
 
-<h1>Install Basic Software</h1>
+<h2>Install Basic Software</h2>
 
 <p>After our VM is up we could install some basic software.</p>
 
@@ -1150,7 +1150,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h1>Nginx</h1>
+<h2>Nginx</h2>
 
 <p>Now let&rsquo;s install Nginx. As the default Nginx distribution may be out of date, let&rsquo;s add Nginx repository and install it.</p>
 
@@ -1167,7 +1167,7 @@
 
 <p><img src="http://climber2002.github.io/images/nginx.png"></p>
 
-<h1>PostgreSQL</h1>
+<h2>PostgreSQL</h2>
 
 <p>Now let&rsquo;s install PostgreSQL. And again we add another repository.</p>
 
@@ -1218,7 +1218,7 @@
 
 <p>The above lines will create a user <em>deploy_sample</em> and a database <em>deploy_sample_production</em> and set deploy_sample as its owner. The last command <em>\q</em> is to exit psql.</p>
 
-<h1>Monit</h1>
+<h2>Monit</h2>
 
 <p>In next part we will use <a href="https://github.com/TalkingQuickly/capistrano-3-rails-template">capistrano template</a> for our deployment. And in that template it will also deploy <a href="http://mmonit.com/monit/">Monit</a>. According to its official website, &ldquo;Monit is a small Open Source utility for managing and monitoring Unix systems. Monit conducts automatic maintenance and repair and can execute meaningful causal actions in error situations.&rdquo;</p>
 
@@ -1231,7 +1231,7 @@
 
 <p>After installation we can run <strong>sudo service monit status</strong> to confirm that monit service is already started.</p>
 
-<h1>Nodejs</h1>
+<h2>Nodejs</h2>
 
 <p>We need a Javascript runtime so we are going to install Nodejs.</p>
 
@@ -1240,20 +1240,20 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h1>Summary</h1>
+<h2>Summary</h2>
 
 <p>In this part we setup a VM server and installed Nginx and PostgreSQL. In next part we will see how to deploy our rails app by using capistrano.</p>
 ]]></content>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Install and configure Postgresql on Ubuntu 14.04]]></title>
+    <title type="html"><![CDATA[Configure Customized data directory for Postgresql on Ubuntu 14.04]]></title>
     <link href="http://climber2002.github.io/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/"/>
     <updated>2015-02-07T20:01:19+10:30</updated>
     <id>http://climber2002.github.io/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04</id>
     <content type="html"><![CDATA[<p><strong>PostgreSQL</strong> is a very popular database in Rails world. Here I describe how to install and configure it on Ubuntu 14.04 server.</p>
 
-<h1>Install</h1>
+<h2>Install</h2>
 
 <p>Using apt-get to install PostgreSQL is very simple. Just execute the following two commands,</p>
 
@@ -1306,7 +1306,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h1>Configure new data directory</h1>
+<h2>Configure new data directory</h2>
 
 <p>Sometimes to improve performance, we want put postgres data files in its own disk. For example, we may mount a disk in folder <strong>/database</strong> and we want to put all postgres data file there. So let&rsquo;s do that.</p>
 

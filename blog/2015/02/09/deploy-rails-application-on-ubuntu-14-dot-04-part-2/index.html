@@ -109,7 +109,7 @@
 
 <p>In this part we will execute many commands, some will be executed in the host machine (our Laptop or iMac for example), and some will be executed in the Vagrant VM. I will show different prompt when executing. On host machine the prompt will be like <strong>host:~/rails_projects/deploy_sample$</strong>, and on VM the prompt will be <strong>vagrant@vagrant-ubuntu-trusty-64:~$</strong>, or if we su as deploy, it will be <strong>deploy@vagrant-ubuntu-trusty-64:~$</strong></p>
 
-<h1>Create deploy user</h1>
+<h2>Create deploy user</h2>
 
 <p>Just like we use an user <em>postgres</em> to manage our database, we should also use a standalone user to manage our application. We name this user <em>deploy</em>. And now let&rsquo;s create this user.</p>
 
@@ -294,7 +294,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h1>Rbenv</h1>
+<h2>Rbenv</h2>
 
 <p>Now we install the Rbenv. We will use <a href="https://github.com/fesplugas/rbenv-installer">Rbenv installer</a> to ease our installation. Since we will use <em>deploy</em> user as our application owner. Make sure you firstly su as <em>deploy</em>.</p>
 
@@ -340,7 +340,7 @@
 
 <p>This will download and compile Ruby 2.1.4 so it will take some time. Let&rsquo;s grab a cup of coffee~~</p>
 
-<h1>Install bundler</h1>
+<h2>Install bundler</h2>
 
 <p>After installed ruby 2.1.4 let&rsquo;s install bundler</p>
 
@@ -349,7 +349,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h1>Create the application directory</h1>
+<h2>Create the application directory</h2>
 
 <p>For my application, I want to deploy the application in <strong>/product</strong> folder, so let&rsquo;s create that folder and change the owner to <em>deploy</em></p>
 
@@ -360,7 +360,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h1>Deploy with Capistrano</h1>
+<h2>Deploy with Capistrano</h2>
 
 <p>Now we will try to deploy with Capistrano. We will use the <a href="https://github.com/TalkingQuickly/capistrano-3-rails-template">capistrano 3 template</a> to help us. Don&rsquo;t worry if you don&rsquo;t fully understand, I will explain it in next part.</p>
 
@@ -415,7 +415,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h2>Copy secrets.yml</h2>
+<h3>Copy secrets.yml</h3>
 
 <p>The Capistrano templates has some template files in <em>config/shared</em> folder, these files will be copied to a shared folder in VM when we run the task <strong>deploy:setup_config</strong>. Notice that we also want <em>secrets.yml</em> to be in the shared folder, so it won&rsquo;t be committed in our git repository. So let&rsquo;s copy this file into shared folder also. We change the filename to secrets.yml.erb as the task will render the erb file to secrets.yml during setup.</p>
 
@@ -824,7 +824,7 @@
 
 <p><img src="/images/deploy_sample.png"></p>
 
-<h1>Summary</h1>
+<h2>Summary</h2>
 
 <p>In this part we&rsquo;ve introduced the steps to deploy by using Capistrano 3. And we utilized a Capistrano template. But you may be wondering what Capistrano has done for us. So in next part I will introduct what has been done in this template.</p>
 </div>
@@ -910,7 +910,7 @@
       </li>
     
       <li class="post">
-        <a href="/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/">Install and configure Postgresql on Ubuntu 14.04</a>
+        <a href="/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/">Configure Customized data directory for Postgresql on Ubuntu 14.04</a>
       </li>
     
       <li class="post">

@@ -109,7 +109,7 @@
 
 <p>In this first part I will describe how to install the web server and database. Here I will use Nginx, Unicorn and PostgreSQL.</p>
 
-<h1>Application</h1>
+<h2>Application</h2>
 
 <p>To demonstrate the deployment, I will create a sample Rails 4.2 application called deploy_sample.</p>
 
@@ -192,7 +192,7 @@
 
 <p>Now this sample application will be used for our deployment</p>
 
-<h1>Vagrant</h1>
+<h2>Vagrant</h2>
 
 <p>For demonstration I will use Vagrant to create a VM. But it should apply to any VPS too. Firstly you should install VirtualBox and Vagrant. The installation should be straight forward.</p>
 
@@ -225,7 +225,7 @@
 </pre></td><td class='code'><pre><code class=''><span class='line'>vagrant@vagrant-ubuntu-trusty-64:~$</span></code></pre></td></tr></table></div></figure>
 
 
-<h1>Install Basic Software</h1>
+<h2>Install Basic Software</h2>
 
 <p>After our VM is up we could install some basic software.</p>
 
@@ -238,7 +238,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h1>Nginx</h1>
+<h2>Nginx</h2>
 
 <p>Now let&rsquo;s install Nginx. As the default Nginx distribution may be out of date, let&rsquo;s add Nginx repository and install it.</p>
 
@@ -255,7 +255,7 @@
 
 <p><img src="/images/nginx.png"></p>
 
-<h1>PostgreSQL</h1>
+<h2>PostgreSQL</h2>
 
 <p>Now let&rsquo;s install PostgreSQL. And again we add another repository.</p>
 
@@ -306,7 +306,7 @@
 
 <p>The above lines will create a user <em>deploy_sample</em> and a database <em>deploy_sample_production</em> and set deploy_sample as its owner. The last command <em>\q</em> is to exit psql.</p>
 
-<h1>Monit</h1>
+<h2>Monit</h2>
 
 <p>In next part we will use <a href="https://github.com/TalkingQuickly/capistrano-3-rails-template">capistrano template</a> for our deployment. And in that template it will also deploy <a href="http://mmonit.com/monit/">Monit</a>. According to its official website, &ldquo;Monit is a small Open Source utility for managing and monitoring Unix systems. Monit conducts automatic maintenance and repair and can execute meaningful causal actions in error situations.&rdquo;</p>
 
@@ -319,7 +319,7 @@
 
 <p>After installation we can run <strong>sudo service monit status</strong> to confirm that monit service is already started.</p>
 
-<h1>Nodejs</h1>
+<h2>Nodejs</h2>
 
 <p>We need a Javascript runtime so we are going to install Nodejs.</p>
 
@@ -328,7 +328,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<h1>Summary</h1>
+<h2>Summary</h2>
 
 <p>In this part we setup a VM server and installed Nginx and PostgreSQL. In next part we will see how to deploy our rails app by using capistrano.</p>
 </div>
@@ -378,7 +378,7 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/" title="Previous Post: Install and configure Postgresql on Ubuntu 14.04">&laquo; Install and configure Postgresql on Ubuntu 14.04</a>
+        <a class="basic-alignment left" href="/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/" title="Previous Post: Configure Customized data directory for Postgresql on Ubuntu 14.04">&laquo; Configure Customized data directory for Postgresql on Ubuntu 14.04</a>
       
       
         <a class="basic-alignment right" href="/blog/2015/02/09/deploy-rails-application-on-ubuntu-14-dot-04-part-2/" title="Next Post: Deploy Rails Application on Ubuntu 14.04 Part 2">Deploy Rails Application on Ubuntu 14.04 Part 2 &raquo;</a>
@@ -414,7 +414,7 @@
       </li>
     
       <li class="post">
-        <a href="/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/">Install and configure Postgresql on Ubuntu 14.04</a>
+        <a href="/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/">Configure Customized data directory for Postgresql on Ubuntu 14.04</a>
       </li>
     
       <li class="post">

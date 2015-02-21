@@ -4,7 +4,7 @@
   <title><![CDATA[Category: unicorn | AprilTouch]]></title>
   <link href="http://climber2002.github.io/blog/categories/unicorn/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2015-02-21T20:21:25+10:30</updated>
+  <updated>2015-02-21T20:26:38+10:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -368,7 +368,7 @@
 
 <p>In this part we will execute many commands, some will be executed in the host machine (our Laptop or iMac for example), and some will be executed in the Vagrant VM. I will show different prompt when executing. On host machine the prompt will be like <strong>host:~/rails_projects/deploy_sample$</strong>, and on VM the prompt will be <strong>vagrant@vagrant-ubuntu-trusty-64:~$</strong>, or if we su as deploy, it will be <strong>deploy@vagrant-ubuntu-trusty-64:~$</strong></p>
 
-<h1>Create deploy user</h1>
+<h2>Create deploy user</h2>
 
 <p>Just like we use an user <em>postgres</em> to manage our database, we should also use a standalone user to manage our application. We name this user <em>deploy</em>. And now let&rsquo;s create this user.</p>
 
@@ -479,7 +479,7 @@
 </span><span class='line'>&lt;p&gt;deploy@vagrant-ubuntu-trusty-64:/home/vagrant<span class="nv">$ </span><span class="nb">cd</span> ~
 </span><span class='line'>deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>mkdir .ssh
 </span><span class='line'>deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span><span class="nb">cd</span> .ssh
-</span><span class='line'>deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>ssh-keygen -t rsa -b 4096 -C &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;&amp;#109;&amp;#97;&amp;#x69;&amp;#x6c;&amp;#x74;&amp;#x6f;&amp;#x3a;&amp;#x63;&amp;#x6c;&amp;#105;&amp;#109;&amp;#98;&amp;#101;&amp;#x72;&amp;#x32;&amp;#48;&amp;#x30;&amp;#x32;&amp;#64;&amp;#x67;&amp;#109;&amp;#x61;&amp;#x69;&amp;#108;&amp;#x2e;&amp;#x63;&amp;#x6f;&amp;#x6d;&quot;</span>&gt;&amp;#99;&amp;#108;&amp;#105;&amp;#109;&amp;#98;&amp;#x65;&amp;#114;&amp;#50;&amp;#48;&amp;#x30;&amp;#x32;&amp;#64;&amp;#x67;&amp;#x6d;&amp;#97;&amp;#x69;&amp;#108;&amp;#x2e;&amp;#x63;&amp;#111;&amp;#x6d;&lt;/a&gt;&lt;/p&gt;
+</span><span class='line'>deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>ssh-keygen -t rsa -b 4096 -C &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;&amp;#109;&amp;#x61;&amp;#105;&amp;#x6c;&amp;#x74;&amp;#x6f;&amp;#x3a;&amp;#x63;&amp;#108;&amp;#105;&amp;#x6d;&amp;#x62;&amp;#x65;&amp;#114;&amp;#50;&amp;#48;&amp;#48;&amp;#50;&amp;#64;&amp;#103;&amp;#109;&amp;#x61;&amp;#105;&amp;#x6c;&amp;#46;&amp;#99;&amp;#x6f;&amp;#x6d;&quot;</span>&gt;&amp;#99;&amp;#x6c;&amp;#x69;&amp;#109;&amp;#98;&amp;#x65;&amp;#x72;&amp;#x32;&amp;#x30;&amp;#48;&amp;#x32;&amp;#x40;&amp;#x67;&amp;#109;&amp;#97;&amp;#105;&amp;#108;&amp;#46;&amp;#99;&amp;#x6f;&amp;#109;&lt;/a&gt;&lt;/p&gt;
 </span><span class='line'>
 </span><span class='line'>&lt;p&gt;
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
@@ -554,7 +554,7 @@
 <span class='line-number'>30</span>
 <span class='line-number'>31</span>
 <span class='line-number'>32</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>host<span class="nv">$ </span>ssh &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;&amp;#x6d;&amp;#x61;&amp;#x69;&amp;#x6c;&amp;#116;&amp;#x6f;&amp;#58;&amp;#100;&amp;#101;&amp;#x70;&amp;#108;&amp;#x6f;&amp;#121;&amp;#x40;&amp;#x31;&amp;#x39;&amp;#x32;&amp;#x2e;&amp;#49;&amp;#54;&amp;#x38;&amp;#46;&amp;#50;&amp;#50;&amp;#46;&amp;#x31;&amp;#x30;&quot;</span>&gt;&amp;#x64;&amp;#x65;&amp;#x70;&amp;#108;&amp;#111;&amp;#121;&amp;#x40;&amp;#x31;&amp;#x39;&amp;#50;&amp;#x2e;&amp;#x31;&amp;#x36;&amp;#x38;&amp;#x2e;&amp;#50;&amp;#x32;&amp;#46;&amp;#x31;&amp;#48;&lt;/a&gt;&lt;/p&gt;
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>host<span class="nv">$ </span>ssh &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;&amp;#109;&amp;#x61;&amp;#x69;&amp;#x6c;&amp;#x74;&amp;#111;&amp;#58;&amp;#x64;&amp;#x65;&amp;#x70;&amp;#108;&amp;#x6f;&amp;#121;&amp;#64;&amp;#x31;&amp;#x39;&amp;#50;&amp;#x2e;&amp;#49;&amp;#54;&amp;#56;&amp;#x2e;&amp;#x32;&amp;#50;&amp;#46;&amp;#49;&amp;#48;&quot;</span>&gt;&amp;#100;&amp;#101;&amp;#x70;&amp;#x6c;&amp;#x6f;&amp;#121;&amp;#64;&amp;#49;&amp;#57;&amp;#50;&amp;#46;&amp;#x31;&amp;#54;&amp;#x38;&amp;#x2e;&amp;#x32;&amp;#x32;&amp;#46;&amp;#49;&amp;#x30;&lt;/a&gt;&lt;/p&gt;
 </span><span class='line'>
 </span><span class='line'>&lt;p&gt;The authenticity of host &amp;lsquo;192.168.22.10 <span class="o">(</span>192.168.22.10<span class="o">)</span>&amp;rsquo; can&amp;rsquo;t be established.
 </span><span class='line'>RSA key fingerprint is b1:e4:e0:42:a1:37:0b:04:d3:88:8c:42:15:aa:00:b4.
@@ -588,7 +588,7 @@
 </span><span class='line'>deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>sudo ls
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
-<h1>Rbenv</h1>
+<h2>Rbenv</h2>
 
 <p>Now we install the Rbenv. We will use <a href="https://github.com/fesplugas/rbenv-installer">Rbenv installer</a> to ease our installation. Since we will use <em>deploy</em> user as our application owner. Make sure you firstly su as <em>deploy</em>.</p>
 
@@ -662,7 +662,7 @@
 
 <p>This will download and compile Ruby 2.1.4 so it will take some time. Let&rsquo;s grab a cup of coffee~~</p>
 
-<h1>Install bundler</h1>
+<h2>Install bundler</h2>
 
 <p>After installed ruby 2.1.4 let&rsquo;s install bundler</p>
 
@@ -678,7 +678,7 @@
 </span><span class='line'>&lt;p&gt;
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
-<h1>Create the application directory</h1>
+<h2>Create the application directory</h2>
 
 <p>For my application, I want to deploy the application in <strong>/product</strong> folder, so let&rsquo;s create that folder and change the owner to <em>deploy</em></p>
 
@@ -696,7 +696,7 @@
 </span><span class='line'>&lt;p&gt;
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
-<h1>Deploy with Capistrano</h1>
+<h2>Deploy with Capistrano</h2>
 
 <p>Now we will try to deploy with Capistrano. We will use the <a href="https://github.com/TalkingQuickly/capistrano-3-rails-template">capistrano 3 template</a> to help us. Don&rsquo;t worry if you don&rsquo;t fully understand, I will explain it in next part.</p>
 
@@ -780,7 +780,7 @@
 </span><span class='line'>&lt;p&gt;
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
-<h2>Copy secrets.yml</h2>
+<h3>Copy secrets.yml</h3>
 
 <p>The Capistrano templates has some template files in <em>config/shared</em> folder, these files will be copied to a shared folder in VM when we run the task <strong>deploy:setup_config</strong>. Notice that we also want <em>secrets.yml</em> to be in the shared folder, so it won&rsquo;t be committed in our git repository. So let&rsquo;s copy this file into shared folder also. We change the filename to secrets.yml.erb as the task will render the erb file to secrets.yml during setup.</p>
 
@@ -1325,7 +1325,7 @@
 
 <p><img src="/images/deploy_sample.png"></p>
 
-<h1>Summary</h1>
+<h2>Summary</h2>
 
 <p>In this part we&rsquo;ve introduced the steps to deploy by using Capistrano 3. And we utilized a Capistrano template. But you may be wondering what Capistrano has done for us. So in next part I will introduct what has been done in this template.</p>
 ]]></content>
@@ -1340,7 +1340,7 @@
 
 <p>In this first part I will describe how to install the web server and database. Here I will use Nginx, Unicorn and PostgreSQL.</p>
 
-<h1>Application</h1>
+<h2>Application</h2>
 
 <p>To demonstrate the deployment, I will create a sample Rails 4.2 application called deploy_sample.</p>
 
@@ -1447,7 +1447,7 @@
 
 <p>Now this sample application will be used for our deployment</p>
 
-<h1>Vagrant</h1>
+<h2>Vagrant</h2>
 
 <p>For demonstration I will use Vagrant to create a VM. But it should apply to any VPS too. Firstly you should install VirtualBox and Vagrant. The installation should be straight forward.</p>
 
@@ -1477,7 +1477,7 @@
 <p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class=''><span class='line'>vagrant@vagrant-ubuntu-trusty-64:~$</span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
-<h1>Install Basic Software</h1>
+<h2>Install Basic Software</h2>
 
 <p>After our VM is up we could install some basic software.</p>
 
@@ -1489,7 +1489,7 @@
 </span><span class='line'>sudo apt-get -y install curl wget unzip git ack-grep htop vim tmux software-properties-common
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
-<h1>Nginx</h1>
+<h2>Nginx</h2>
 
 <p>Now let&rsquo;s install Nginx. As the default Nginx distribution may be out of date, let&rsquo;s add Nginx repository and install it.</p>
 
@@ -1513,7 +1513,7 @@
 
 <p><img src="/images/nginx.png"></p>
 
-<h1>PostgreSQL</h1>
+<h2>PostgreSQL</h2>
 
 <p>Now let&rsquo;s install PostgreSQL. And again we add another repository.</p>
 
@@ -1577,7 +1577,7 @@
 
 <p>The above lines will create a user <em>deploy_sample</em> and a database <em>deploy_sample_production</em> and set deploy_sample as its owner. The last command <em>\q</em> is to exit psql.</p>
 
-<h1>Monit</h1>
+<h2>Monit</h2>
 
 <p>In next part we will use <a href="https://github.com/TalkingQuickly/capistrano-3-rails-template">capistrano template</a> for our deployment. And in that template it will also deploy <a href="http://mmonit.com/monit/">Monit</a>. According to its official website, &ldquo;Monit is a small Open Source utility for managing and monitoring Unix systems. Monit conducts automatic maintenance and repair and can execute meaningful causal actions in error situations.&rdquo;</p>
 
@@ -1597,7 +1597,7 @@
 
 <p>After installation we can run <strong>sudo service monit status</strong> to confirm that monit service is already started.</p>
 
-<h1>Nodejs</h1>
+<h2>Nodejs</h2>
 
 <p>We need a Javascript runtime so we are going to install Nodejs.</p>
 
@@ -1613,7 +1613,7 @@
 </span><span class='line'>&lt;p&gt;
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
 
-<h1>Summary</h1>
+<h2>Summary</h2>
 
 <p>In this part we setup a VM server and installed Nginx and PostgreSQL. In next part we will see how to deploy our rails app by using capistrano.</p>
 ]]></content>
