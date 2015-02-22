@@ -9,7 +9,7 @@
   <meta name="author" content="Andy Wang">
 
   
-  <meta name="description" content="Have you ever wondered for a Rails application, when you access an action in a controller, how Rails finds the template to render? For example, when &hellip;">
+  <meta name="description" content="In last part we introduced that when Rails looks for a template, it firstly populate an options hash by calling _normalize_render. And then in the &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,326 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/02/22/digging-rails-how-rails-finds-your-templates-part-2/">Digging Rails: How Rails Finds Your Templates Part 2</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-02-22T21:24:30+10:30" pubdate data-updated="true">Feb 22<span>nd</span>, 2015</time>
+        
+         | <a href="/blog/2015/02/22/digging-rails-how-rails-finds-your-templates-part-2/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>In <a href="http://climber2002.github.io/blog/2015/02/21/how-rails-finds-your-templates-part-1/">last part</a> we introduced that when Rails looks for a template, it firstly populate an options hash by calling <strong>_normalize_render</strong>. And then in the <em>render</em> method, it will call <strong>render_to_body</strong> and pass the options, like the following code,</p>
+
+<figure class='code'><figcaption><span>rails/actionpack/lib/abstract_controller/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">AbstractController</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Rendering</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Normalize arguments, options and then delegates render_to_body and</span>
+</span><span class='line'>    <span class="c1"># sticks the result in self.response_body.</span>
+</span><span class='line'>    <span class="c1"># :api: public</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">render</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">options</span> <span class="o">=</span> <span class="n">_normalize_render</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">block</span><span class="p">)</span>
+</span><span class='line'>      <span class="nb">self</span><span class="o">.</span><span class="n">response_body</span> <span class="o">=</span> <span class="n">render_to_body</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">_process_format</span><span class="p">(</span><span class="n">rendered_format</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span> <span class="k">if</span> <span class="n">rendered_format</span>
+</span><span class='line'>      <span class="nb">self</span><span class="o">.</span><span class="n">response_body</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <strong>render_to_body</strong> will select the templated based on the values in options hash. If we check the source code of <strong>AbstractController::Rendering#render_to_body</strong>, it&rsquo;s nothing. Just as usual, it&rsquo;s overridden by other modules.</p>
+
+<figure class='code'><figcaption><span>rails/actionpack/lib/abstract_controller/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">AbstractController</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Rendering</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Performs the actual template rendering.</span>
+</span><span class='line'>    <span class="c1"># :api: public</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">render_to_body</span><span class="p">(</span><span class="n">options</span> <span class="o">=</span> <span class="p">{})</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Just as last part, we could run <em>ApplicationController.ancestors_that_implement_instance_method</em> to find what classes or modules implement that method, and we will find the following,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="mi">2</span><span class="o">.</span><span class="mi">0</span><span class="o">.</span><span class="mi">0</span><span class="o">-</span><span class="n">p353</span> <span class="p">:</span><span class="mo">00</span><span class="mi">8</span> <span class="o">&gt;</span> <span class="no">ApplicationController</span><span class="o">.</span><span class="n">ancestors_that_implement_instance_method</span><span class="p">(</span><span class="ss">:render_to_body</span><span class="p">)</span>
+</span><span class='line'> <span class="o">=&gt;</span> <span class="o">[</span><span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Renderers</span><span class="p">,</span> <span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Rendering</span><span class="p">,</span> <span class="ss">ActionView</span><span class="p">:</span><span class="ss">:Rendering</span><span class="p">,</span> <span class="ss">AbstractController</span><span class="p">:</span><span class="ss">:Rendering</span><span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We can see three modules implement that method: <em>ActionController::Renderers</em>, <em>ActionController::Rendering</em>, and <em>ActionView::Rendering</em>. Let&rsquo;s look at each of them one by one.</p>
+
+<h2>ActionController::Renderers#render_to_body</h2>
+
+<p>For <em>ActionController::Renderers#render_to_body</em> method, it registers a set of renderers, and then if the options contains the renderer key, then it will call that renderer. If no renderer is found, it just call <em>super</em></p>
+
+<figure class='code'><figcaption><span>rails/actionpack/lib/action_controller/metal/renderers.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">ActionController</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Renderers</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">render_to_body</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">_render_to_body_with_renderer</span><span class="p">(</span><span class="n">options</span><span class="p">)</span> <span class="o">||</span> <span class="k">super</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">_render_to_body_with_renderer</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">_renderers</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="nb">name</span><span class="o">|</span>
+</span><span class='line'>        <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">key?</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">_process_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">method_name</span> <span class="o">=</span> <span class="no">Renderers</span><span class="o">.</span><span class="n">_render_with_renderer_method_name</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+</span><span class='line'>          <span class="k">return</span> <span class="nb">send</span><span class="p">(</span><span class="n">method_name</span><span class="p">,</span> <span class="n">options</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="nb">name</span><span class="p">),</span> <span class="n">options</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">end</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>      <span class="kp">nil</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>This is mainly for calling <strong>render</strong> and pass parameters like :json, :xml, like the following code,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">ArticlesController</span> <span class="o">&lt;</span> <span class="no">ApplicationController</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">index</span>
+</span><span class='line'>    <span class="vi">@articles</span> <span class="o">=</span> <span class="no">Articles</span><span class="o">.</span><span class="n">all</span>
+</span><span class='line'>    <span class="n">render</span> <span class="ss">json</span><span class="p">:</span> <span class="vi">@articles</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Since <em>:json</em> is a registered renderer in <em>ActionController::Renderers</em>, it will call that renderer. You can also register your own renderer by calling <strong>ActionController::Renderers.add</strong>.</p>
+
+<h2>ActionController::Rendering#render_to_body</h2>
+
+<p>If in <strong>ActionController::Renderers#render_to_body</strong>, it doesn&rsquo;t find a renderer, then it will call <em>super</em>, which is <strong>ActionController::Rendering#render_to_body</strong>. Let&rsquo;s look at what this module does in the method.</p>
+
+<figure class='code'><figcaption><span>rails/actionpack/lib/action_controller/metal/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">ActionController</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Rendering</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="no">RENDER_FORMATS_IN_PRIORITY</span> <span class="o">=</span> <span class="o">[</span><span class="ss">:body</span><span class="p">,</span> <span class="ss">:text</span><span class="p">,</span> <span class="ss">:plain</span><span class="p">,</span> <span class="ss">:html</span><span class="o">]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">render_to_body</span><span class="p">(</span><span class="n">options</span> <span class="o">=</span> <span class="p">{})</span>
+</span><span class='line'>      <span class="k">super</span> <span class="o">||</span> <span class="n">_render_in_priorities</span><span class="p">(</span><span class="n">options</span><span class="p">)</span> <span class="o">||</span> <span class="s1">&#39; &#39;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">_render_in_priorities</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</span><span class='line'>      <span class="no">RENDER_FORMATS_IN_PRIORITY</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="nb">format</span><span class="o">|</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">options</span><span class="o">[</span><span class="nb">format</span><span class="o">]</span> <span class="k">if</span> <span class="n">options</span><span class="o">.</span><span class="n">key?</span><span class="p">(</span><span class="nb">format</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="kp">nil</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Notice that this method calls <em>super</em> first, it only call <em>_render_in_priorities</em> if <em>super</em> returns nothing.</p>
+
+<p>In <strong>_render_in_priorities</strong> it searches the RENDER_FORMATS_IN_PRIORITY one by one, and return the option value if it finds the format.</p>
+
+<p>In this module when it calls <em>super</em>, it is calling <strong>ActionView::Rendering#render_to_body</strong> method. Let&rsquo;s have a look.</p>
+
+<h2>ActionView::Rendering#render_to_body</h2>
+
+<figure class='code'><figcaption><span>rails/actionview/lib/action_view/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">ActionView</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Rendering</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">render_to_body</span><span class="p">(</span><span class="n">options</span> <span class="o">=</span> <span class="p">{})</span>
+</span><span class='line'>      <span class="n">_process_options</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">_render_template</span><span class="p">(</span><span class="n">options</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Returns an object that is able to render templates.</span>
+</span><span class='line'>    <span class="c1"># :api: private</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">view_renderer</span>
+</span><span class='line'>      <span class="vi">@_view_renderer</span> <span class="o">||=</span> <span class="ss">ActionView</span><span class="p">:</span><span class="ss">:Renderer</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">lookup_context</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1"># Find and render a template based on the options given.</span>
+</span><span class='line'>      <span class="c1"># :api: private</span>
+</span><span class='line'>      <span class="k">def</span> <span class="nf">_render_template</span><span class="p">(</span><span class="n">options</span><span class="p">)</span> <span class="c1">#:nodoc:</span>
+</span><span class='line'>        <span class="n">variant</span> <span class="o">=</span> <span class="n">options</span><span class="o">[</span><span class="ss">:variant</span><span class="o">]</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">lookup_context</span><span class="o">.</span><span class="n">rendered_format</span> <span class="o">=</span> <span class="kp">nil</span> <span class="k">if</span> <span class="n">options</span><span class="o">[</span><span class="ss">:formats</span><span class="o">]</span>
+</span><span class='line'>        <span class="n">lookup_context</span><span class="o">.</span><span class="n">variants</span> <span class="o">=</span> <span class="n">variant</span> <span class="k">if</span> <span class="n">variant</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">view_renderer</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">view_context</span><span class="p">,</span> <span class="n">options</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>It turns out that here is the the meat we are looking for. The <strong>render_to_body</strong> calls <strong>_render_template</strong>, and for the <strong>_render_template</strong>, it calls **view_renderer.render(view_context, options).</p>
+
+<p>The <em>view_renderer</em> is an instance of <strong>ActionView::Renderer</strong>, and when it&rsquo;s initialized, it&rsquo;s passing a <em>lookup_context</em> object, which is an instance of <strong>ActionView::LookupContext</strong>. The <strong>ActionView::LookupContext</strong> contains all information about looking for a template based on the options. So in next part we will check this class in detail, and check how <strong>LookupContext</strong>, <strong>ViewPaths</strong>, <strong>PathSet</strong> work together to find the template.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -4032,113 +4352,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/">Using Index Files in Rails 4 Assets Pipeline</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-08-17T21:15:28+09:30" pubdate data-updated="true">Aug 17<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Recently I bought a website template from <a href="https://wrapbootstrap.com/theme/tshop-responsive-e-commerce-template-WB002S263">WrapBootstrap</a> and I wanna itegrate this into a Spree website I&rsquo;m working on. According to the documents of <a href="http://edgeguides.rubyonrails.org/asset_pipeline.html">Asset Pipeline</a> and the <a href="http://railscasts.com/episodes/279-understanding-the-asset-pipeline">RailsCasts</a>. I put the stylesheets and javascripts of this template into the folder #{Rails.root}/vendor/assets/tshop. So for example, I can access a stylesheet at #{Rails.root}/vendor/assets/tshop/stylesheets/style.css from the url <a href="http://localhost:3000/assets/stylesheets/style.css">http://localhost:3000/assets/stylesheets/style.css</a></p>
-
-<p>My folder structure is like following figure,</p>
-
-<p><img src="/images/rails_vendor_folder.png"></p>
-
-<p>According to the <a href="http://edgeguides.rubyonrails.org/asset_pipeline.html#using-index-files">Rails documents</a>, I should create a file index.js and index.css under #{Rails.root}/vendor/assets/tshop, but that doesn&rsquo;t work for me. Actually I named the files as tshop.js and tshop.css.scss, as the figure above. So in the application.css and application.js I chould load the tshop library by calling,</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="c">/*</span>
-</span><span class='line'><span class="c"> ...</span>
-</span><span class='line'><span class="c"> *= require tshop</span>
-</span><span class='line'><span class="c"> ...</span>
-</span><span class='line'><span class="c"> */</span>
-</span><span class='line'>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p> and</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'> <span class="c1">//= require tshop</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>And in the tshop.css.scss, I could load the file #{Rails.root}/vendor/assets/tshop/stylesheets/style.css by using following code,</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="c">/*</span>
-</span><span class='line'><span class="c"> ...</span>
-</span><span class='line'><span class="c"> *= require stylesheets/style</span>
-</span><span class='line'><span class="c"> ...</span>
-</span><span class='line'><span class="c"> */</span>
-</span><span class='line'>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p> And in tshop.js, the file #{Rails.root}/vendor/assets/tshop/javascripts/script.js could be loaded by following code,</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'> <span class="c1">//= require javascripts/script</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>In the templates, I need to change the background image url, for example, in style.css,</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="nc">.parallax-image-2</span> <span class="p">{</span>
-</span><span class='line'>  <span class="k">background</span><span class="o">:</span> <span class="sx">url(&quot;/assets/stylesheets/parallax/people-collage.jpg&quot;)</span> <span class="k">fixed</span><span class="p">;</span>
-</span><span class='line'>  <span class="k">background-attachment</span><span class="o">:</span> <span class="k">fixed</span><span class="p">;</span><span class="c">/* IE FIX */</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This image file will be in #{Rails.root}/vendor/assets/tshop/stylesheets/parallax/people-collage.jpg.</p>
-
-<p>Here are the organization I used for my Rails 4 application. The point is to use <em>library.css</em> and <em>library.js</em> to name the index files instead of index.css and index.js.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -4154,6 +4367,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/02/22/digging-rails-how-rails-finds-your-templates-part-2/">Digging Rails: How Rails finds your templates Part 2</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/02/21/how-rails-finds-your-templates-part-1/">Digging Rails: How Rails finds your templates Part 1</a>
       </li>
     
@@ -4167,10 +4384,6 @@
     
       <li class="post">
         <a href="/blog/2015/02/08/deploy-rails-application-on-ubuntu-14-dot-04/">Deploy Rails application on Ubuntu 14.04 Part 1</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/">Configure Customized data directory for Postgresql on Ubuntu 14.04</a>
       </li>
     
   </ul>

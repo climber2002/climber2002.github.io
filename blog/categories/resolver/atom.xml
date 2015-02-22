@@ -4,7 +4,7 @@
   <title><![CDATA[Category: resolver | AprilTouch]]></title>
   <link href="http://climber2002.github.io/blog/categories/resolver/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2015-02-22T00:16:32+10:30</updated>
+  <updated>2015-02-22T21:58:58+10:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -12,6 +12,364 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Digging Rails: How Rails finds your templates Part 2]]></title>
+    <link href="http://climber2002.github.io/blog/2015/02/22/digging-rails-how-rails-finds-your-templates-part-2/"/>
+    <updated>2015-02-22T21:24:30+10:30</updated>
+    <id>http://climber2002.github.io/blog/2015/02/22/digging-rails-how-rails-finds-your-templates-part-2</id>
+    <content type="html"><![CDATA[<p>In <a href="http://climber2002.github.io/blog/2015/02/21/how-rails-finds-your-templates-part-1/">last part</a> we introduced that when Rails looks for a template, it firstly populate an options hash by calling <strong>_normalize_render</strong>. And then in the <em>render</em> method, it will call <strong>render_to_body</strong> and pass the options, like the following code,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/actionpack/lib/abstract_controller/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module AbstractController&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">module</span> <span class="nn">Rendering</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;# Normalize arguments, options and then delegates render_to_body and</span>
+</span><span class='line'><span class="sr"># sticks the result in self.response_body.</span>
+</span><span class='line'><span class="sr"># :api: public</span>
+</span><span class='line'><span class="sr">def render(*args, &amp;amp;block)</span>
+</span><span class='line'><span class="sr">  options = _normalize_render(*args, &amp;amp;block)</span>
+</span><span class='line'><span class="sr">  self.response_body = render_to_body(options)</span>
+</span><span class='line'><span class="sr">  _process_format(rendered_format, options) if rendered_format</span>
+</span><span class='line'><span class="sr">  self.response_body</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The <strong>render_to_body</strong> will select the templated based on the values in options hash. If we check the source code of <strong>AbstractController::Rendering#render_to_body</strong>, it&rsquo;s nothing. Just as usual, it&rsquo;s overridden by other modules.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/actionpack/lib/abstract_controller/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module AbstractController&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">module</span> <span class="nn">Rendering</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;# Performs the actual template rendering.</span>
+</span><span class='line'><span class="sr"># :api: public</span>
+</span><span class='line'><span class="sr">def render_to_body(options = {})</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Just as last part, we could run <em>ApplicationController.ancestors_that_implement_instance_method</em> to find what classes or modules implement that method, and we will find the following,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;2.0.0-p353 :008 &gt; ApplicationController.ancestors_that_implement_instance_method(:render_to_body)</span>
+</span><span class='line'><span class="sr"> =&gt; [ActionController::Renderers, ActionController::Rendering, ActionView::Rendering, AbstractController::Rendering]&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We can see three modules implement that method: <em>ActionController::Renderers</em>, <em>ActionController::Rendering</em>, and <em>ActionView::Rendering</em>. Let&rsquo;s look at each of them one by one.</p>
+
+<h2>ActionController::Renderers#render_to_body</h2>
+
+<p>For <em>ActionController::Renderers#render_to_body</em> method, it registers a set of renderers, and then if the options contains the renderer key, then it will call that renderer. If no renderer is found, it just call <em>super</em></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/actionpack/lib/action_controller/metal/renderers.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module ActionController&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">module</span> <span class="nn">Renderers</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;def render_to_body(options)</span>
+</span><span class='line'><span class="sr">  _render_to_body_with_renderer(options) || super</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">def _render_to_body_with_renderer(options)</span>
+</span><span class='line'><span class="sr">  _renderers.each do |name|</span>
+</span><span class='line'><span class="sr">    if options.key?(name)</span>
+</span><span class='line'><span class="sr">      _process_options(options)</span>
+</span><span class='line'><span class="sr">      method_name = Renderers._render_with_renderer_method_name(name)</span>
+</span><span class='line'><span class="sr">      return send(method_name, options.delete(name), options)</span>
+</span><span class='line'><span class="sr">    end</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'><span class="sr">  nil</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>This is mainly for calling <strong>render</strong> and pass parameters like :json, :xml, like the following code,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;class ArticlesController &amp;lt; ApplicationController&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">def</span> <span class="nf">index</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;@articles = Articles.all</span>
+</span><span class='line'><span class="sr">render json: @articles</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end</span>
+</span><span class='line'><span class="sr">end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Since <em>:json</em> is a registered renderer in <em>ActionController::Renderers</em>, it will call that renderer. You can also register your own renderer by calling <strong>ActionController::Renderers.add</strong>.</p>
+
+<h2>ActionController::Rendering#render_to_body</h2>
+
+<p>If in <strong>ActionController::Renderers#render_to_body</strong>, it doesn&rsquo;t find a renderer, then it will call <em>super</em>, which is <strong>ActionController::Rendering#render_to_body</strong>. Let&rsquo;s look at what this module does in the method.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/actionpack/lib/action_controller/metal/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module ActionController&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">module</span> <span class="nn">Rendering</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;RENDER_FORMATS_IN_PRIORITY = [:body, :text, :plain, :html]</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">def render_to_body(options = {})</span>
+</span><span class='line'><span class="sr">  super || _render_in_priorities(options) || &#39; &#39;</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">private</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">def _render_in_priorities(options)</span>
+</span><span class='line'><span class="sr">  RENDER_FORMATS_IN_PRIORITY.each do |format|</span>
+</span><span class='line'><span class="sr">    return options[format] if options.key?(format)</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  nil</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Notice that this method calls <em>super</em> first, it only call <em>_render_in_priorities</em> if <em>super</em> returns nothing.</p>
+
+<p>In <strong>_render_in_priorities</strong> it searches the RENDER_FORMATS_IN_PRIORITY one by one, and return the option value if it finds the format.</p>
+
+<p>In this module when it calls <em>super</em>, it is calling <strong>ActionView::Rendering#render_to_body</strong> method. Let&rsquo;s have a look.</p>
+
+<h2>ActionView::Rendering#render_to_body</h2>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/actionview/lib/action_view/rendering.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module ActionView&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">module</span> <span class="nn">Rendering</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;def render_to_body(options = {})</span>
+</span><span class='line'><span class="sr">  _process_options(options)</span>
+</span><span class='line'><span class="sr">  _render_template(options)</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr"># Returns an object that is able to render templates.</span>
+</span><span class='line'><span class="sr"># :api: private</span>
+</span><span class='line'><span class="sr">def view_renderer</span>
+</span><span class='line'><span class="sr">  @_view_renderer ||= ActionView::Renderer.new(lookup_context)</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">private</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  # Find and render a template based on the options given.</span>
+</span><span class='line'><span class="sr">  # :api: private</span>
+</span><span class='line'><span class="sr">  def _render_template(options) #:nodoc:</span>
+</span><span class='line'><span class="sr">    variant = options[:variant]</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">    lookup_context.rendered_format = nil if options[:formats]</span>
+</span><span class='line'><span class="sr">    lookup_context.variants = variant if variant</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">    view_renderer.render(view_context, options)</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>It turns out that here is the the meat we are looking for. The <strong>render_to_body</strong> calls <strong>_render_template</strong>, and for the <strong>_render_template</strong>, it calls **view_renderer.render(view_context, options).</p>
+
+<p>The <em>view_renderer</em> is an instance of <strong>ActionView::Renderer</strong>, and when it&rsquo;s initialized, it&rsquo;s passing a <em>lookup_context</em> object, which is an instance of <strong>ActionView::LookupContext</strong>. The <strong>ActionView::LookupContext</strong> contains all information about looking for a template based on the options. So in next part we will check this class in detail, and check how <strong>LookupContext</strong>, <strong>ViewPaths</strong>, <strong>PathSet</strong> work together to find the template.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Digging Rails: How Rails finds your templates Part 1]]></title>
