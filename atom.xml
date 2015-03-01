@@ -4,7 +4,7 @@
   <title><![CDATA[AprilTouch]]></title>
   <link href="http://climber2002.github.io/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2015-03-01T21:34:26+10:30</updated>
+  <updated>2015-03-01T21:41:06+10:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -130,7 +130,7 @@
 
 <h2>Update JS files</h2>
 
-<p>Sometimes the JS files also reference image files, like following code,</p>
+<p>Sometimes the JS files also reference image files, like following code in loop.js,</p>
 
 <figure class='code'><figcaption><span>loop.js </span></figcaption>
 <div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
