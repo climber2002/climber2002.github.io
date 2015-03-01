@@ -4,7 +4,7 @@
   <title><![CDATA[Category: bootstrap | AprilTouch]]></title>
   <link href="http://climber2002.github.io/blog/categories/bootstrap/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2015-03-01T20:52:14+10:30</updated>
+  <updated>2015-03-01T21:34:26+10:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -22,15 +22,214 @@
 
 <h2>Location</h2>
 
-<p><img class="left" src="/images/loop.jpg"></p>
+<p><img class="left" src="/images/loop.png" width="300" height="300"></p>
 
 <p>After extract the template zip file, we can see the organization is like the  structure on the left. This template actually contains two templates, one for personal and one for Agency, and what I want is for the Agency. We can see that it puts all resource files like javascripts, CSS files and fonts file in folder <em>assets</em>. I want to keep this structure, so it would be easier to upgrade if it releases new version. The best practice for put 3rd-party template is to put it in <strong>vendor/assets</strong>, so I create a folder <strong>loop</strong> under <strong>vendor/assets</strong> and and copy the <em>assets</em> folder to <strong>vendor/assets/loop</strong>, like the following figure,</p>
 
-<p><img src="/images/loop_copied.jpg"></p>
+<p><img class="left" src="/images/loop_copied.png" width="300" height="300"></p>
 
-<p>Notice that I keep the <em>assets</em> folder from the original template, so when we reference the files under it from browser it will create some strange path like <em>/assets/assets/js/loop.js</em> because rails will append <em>assets</em> before the resource. If you want you can also rename the <em>assets</em> folder, like name it <em>loop</em>.</p>
+<p>Notice that I changed the <em>assets</em> folder from the original template and named it <strong>loop</strong>, so when we reference the files under it from browser it will create paths like <em>/assets/loop/js/loop.js</em> because rails will append <em>assets</em> before the resource. This is to make the files in this template not collide with other assets.</p>
 
 <h2>Create index file</h2>
+
+<p>If you read my blog <a href="http://climber2002.github.io/blog/2014/08/17/using-index-files-in-rails-4-assets-pipeline/">Using Index Files in Rails 4 Assets Pipeline</a> before, you should know that the index files should be named <strong>loop.css.scss</strong> and <strong>loop.js</strong>, under foler <strong>vendor/assets/loop</strong>.</p>
+
+<p>They have the following contents,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>vendor/assets/loop/loop.css.scss </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="o">&lt;/</span><span class="nt">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nt">p</span><span class="o">&gt;/&lt;</span><span class="nt">em</span><span class="o">&gt;</span>
+</span><span class='line'> <span class="o">&lt;/</span><span class="nt">em</span><span class="o">&gt;=</span> <span class="nt">require</span> <span class="nt">loop</span><span class="o">/</span><span class="nt">css</span><span class="o">/</span><span class="nt">bootstrap</span>
+</span><span class='line'> <span class="o">&lt;</span><span class="nt">em</span><span class="o">&gt;=</span> <span class="nt">require</span> <span class="nt">loop</span><span class="o">/</span><span class="nt">css</span><span class="o">/</span><span class="nt">font-awesome</span>
+</span><span class='line'> <span class="o">&lt;/</span><span class="nt">em</span><span class="o">&gt;=</span> <span class="nt">require</span> <span class="nt">loop</span><span class="o">/</span><span class="nt">css</span><span class="o">/</span><span class="nt">main</span>
+</span><span class='line'> <span class="o">*/&lt;/</span><span class="nt">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nt">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>vendor/assets/loop/loop.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="c1">//= require loop/js/jquery-2.1.0</span>
+</span><span class='line'><span class="c1">//= require loop/js/bootstrap.js</span>
+</span><span class='line'><span class="c1">//= require loop/js/plugins/scrollto/jquery.scrollTo-1.4.3.1-min</span>
+</span><span class='line'><span class="c1">//= require loop/js/plugins/scrollto/jquery.localscroll-1.2.7-min</span>
+</span><span class='line'><span class="c1">//= require loop/js/plugins/easing/jquery.easing.min</span>
+</span><span class='line'><span class="c1">//= require loop/js/plugins/google-map/google-map</span>
+</span><span class='line'><span class="c1">//= require loop/js/plugins/parallax/jquery.parallax-1.1.3</span>
+</span><span class='line'><span class="c1">//= require loop/js/plugins/jpreloader/jpreloader.min</span>
+</span><span class='line'><span class="c1">//= require loop/js/plugins/isotope/imagesloaded.pkgd</span>
+</span><span class='line'><span class="c1">//= require loop/js/plugins/isotope/isotope.pkgd.min</span>
+</span><span class='line'><span class="c1">//= require loop/js/plugins/wow/wow</span>
+</span><span class='line'><span class="c1">//= require loop/js/plugins/flexslider/jquery.flexslider-min</span>
+</span><span class='line'><span class="c1">//= require loop/js/plugins/magnific/jquery.magnific-popup.min</span>
+</span><span class='line'><span class="c1">//= require loop/js/plugins/supersized/supersized.3.2.7.min</span>
+</span><span class='line'><span class="c1">//= require loop/js/plugins/supersized/supersized.shutter.min</span>
+</span><span class='line'><span class="c1">//= require loop/js/loop.js&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Basically the index files include all dependent css and javascripts, but pay atthention that their path should start with <em>loop</em> since we have put all assets in <strong>vendor/assets/loop/loop</strong> folder.</p>
+
+<h2>Update CSS files</h2>
+
+<p>In the template&rsquo;s CSS files, there are reference to images such as background image, like following code,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>main.css </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="o">&lt;/</span><span class="nt">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nt">p</span><span class="o">&gt;</span><span class="nt">body</span><span class="nc">.fullscreen-image-background</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">background-image</span><span class="o">:</span> <span class="sx">url(&amp;lsquo;../img/sliders/slider3.png?1393983498&amp;rsquo;)</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">background</span><span class="o">-</span><span class="k">size</span><span class="o">:</span> <span class="n">cover</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">background-repeat</span><span class="o">:</span> <span class="k">no-repeat</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">background-position</span><span class="o">:</span> <span class="k">center</span> <span class="k">center</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="nt">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nt">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Such url won&rsquo;t work because Rails will precompile those assets in <em>public/assets</em> folder, so we name this file to <em>main.css.scss</em>, and use <strong>image-url</strong> tag, like following,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>main.css </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='css'><span class='line'><span class="o">&lt;/</span><span class="nt">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nt">p</span><span class="o">&gt;</span><span class="nt">body</span><span class="nc">.fullscreen-image-background</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">background-image</span><span class="o">:</span> <span class="n">image</span><span class="o">-</span><span class="sx">url(&amp;lsquo;loop/img/sliders/slider3.png&amp;rsquo;)</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">background</span><span class="o">-</span><span class="k">size</span><span class="o">:</span> <span class="n">cover</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">background-repeat</span><span class="o">:</span> <span class="k">no-repeat</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">background-position</span><span class="o">:</span> <span class="k">center</span> <span class="k">center</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;/</span><span class="nt">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nt">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<h2>Update JS files</h2>
+
+<p>Sometimes the JS files also reference image files, like following code,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>loop.js </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">slides</span><span class="o">:</span>   <span class="p">[</span>       <span class="c1">// Slideshow Images&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">pre</span><span class="o">&gt;&lt;</span><span class="nx">code</span><span class="o">&gt;</span>          <span class="p">{</span><span class="nx">image</span> <span class="o">:</span> <span class="s1">&#39;assets/img/sliders/slider1.png&#39;</span><span class="p">,</span> <span class="nx">title</span> <span class="o">:</span> <span class="s1">&#39;&amp;lt;div class=&quot;hero-text&quot;&amp;gt;&amp;lt;h2 class=&quot;hero-heading&quot;&amp;gt;HANDCRAFTED&amp;lt;/h2&amp;gt;&amp;lt;p&amp;gt;Built to provide great visitor experience&amp;lt;/p&amp;gt;&amp;lt;/div&amp;gt;&#39;</span><span class="p">,</span> <span class="nx">thumb</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="nx">url</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">},</span>
+</span><span class='line'>          <span class="p">{</span><span class="nx">image</span> <span class="o">:</span> <span class="s1">&#39;assets/img/sliders/slider2.png&#39;</span><span class="p">,</span> <span class="nx">title</span> <span class="o">:</span> <span class="s1">&#39;&amp;lt;div class=&quot;hero-text&quot;&amp;gt;&amp;lt;h2 class=&quot;hero-heading&quot;&amp;gt;PARALLAX&amp;lt;/h2&amp;gt;&amp;lt;p&amp;gt;Scrolling the page is fun with parallax background&amp;lt;/p&amp;gt;&amp;lt;/div&amp;gt;&#39;</span><span class="p">,</span> <span class="nx">thumb</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="nx">url</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">},</span>
+</span><span class='line'>          <span class="p">{</span><span class="nx">image</span> <span class="o">:</span> <span class="s1">&#39;assets/img/sliders/slider3.png&#39;</span><span class="p">,</span> <span class="nx">title</span> <span class="o">:</span> <span class="s1">&#39;&amp;lt;div class=&quot;hero-text&quot;&amp;gt;&amp;lt;h2 class=&quot;hero-heading&quot;&amp;gt;BUY ONE FOR TWO&amp;lt;/h2&amp;gt;&amp;lt;p&amp;gt;Buy one to get both of the agency and personal theme&amp;lt;/p&amp;gt;&amp;lt;/div&amp;gt;&#39;</span><span class="p">,</span> <span class="nx">thumb</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="nx">url</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">}</span>
+</span><span class='line'>        <span class="p">]</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>For the same reason, after deploy production the JS files can&rsquo;t find the image files also, in such case we should depend on the asset pipeline and change the file to <strong>loop.js.erb</strong>, and use <strong>image_path</strong>.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>loop.js.erb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">slides</span><span class="o">:</span>   <span class="p">[</span>       <span class="c1">// Slideshow Images&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">pre</span><span class="o">&gt;&lt;</span><span class="nx">code</span><span class="o">&gt;</span>          <span class="p">{</span><span class="nx">image</span> <span class="o">:</span> <span class="s1">&#39;&amp;lt;%= image_path &#39;</span><span class="nx">loop</span><span class="o">/</span><span class="nx">img</span><span class="o">/</span><span class="nx">sliders</span><span class="o">/</span><span class="nx">slider1</span><span class="p">.</span><span class="nx">png</span><span class="s1">&#39;%&amp;gt;&#39;</span><span class="p">,</span> <span class="nx">title</span> <span class="o">:</span> <span class="s1">&#39;&amp;lt;div class=&quot;hero-text&quot;&amp;gt;&amp;lt;h2 class=&quot;hero-heading&quot;&amp;gt;HANDCRAFTED&amp;lt;/h2&amp;gt;&amp;lt;p&amp;gt;Built to provide great visitor experience&amp;lt;/p&amp;gt;&amp;lt;/div&amp;gt;&#39;</span><span class="p">,</span> <span class="nx">thumb</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="nx">url</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">},</span>
+</span><span class='line'>          <span class="p">{</span><span class="nx">image</span> <span class="o">:</span> <span class="s1">&#39;&amp;lt;%= image_path &#39;</span><span class="nx">loop</span><span class="o">/</span><span class="nx">img</span><span class="o">/</span><span class="nx">sliders</span><span class="o">/</span><span class="nx">slider2</span><span class="p">.</span><span class="nx">png</span><span class="s1">&#39;%&amp;gt;&#39;</span><span class="p">,</span> <span class="nx">title</span> <span class="o">:</span> <span class="s1">&#39;&amp;lt;div class=&quot;hero-text&quot;&amp;gt;&amp;lt;h2 class=&quot;hero-heading&quot;&amp;gt;PARALLAX&amp;lt;/h2&amp;gt;&amp;lt;p&amp;gt;Scrolling the page is fun with parallax background&amp;lt;/p&amp;gt;&amp;lt;/div&amp;gt;&#39;</span><span class="p">,</span> <span class="nx">thumb</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="nx">url</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">},</span>
+</span><span class='line'>          <span class="p">{</span><span class="nx">image</span> <span class="o">:</span> <span class="s1">&#39;&amp;lt;%= image_path &#39;</span><span class="nx">loop</span><span class="o">/</span><span class="nx">img</span><span class="o">/</span><span class="nx">sliders</span><span class="o">/</span><span class="nx">slider3</span><span class="p">.</span><span class="nx">png</span><span class="s1">&#39;%&amp;gt;&#39;</span><span class="p">,</span> <span class="nx">title</span> <span class="o">:</span> <span class="s1">&#39;&amp;lt;div class=&quot;hero-text&quot;&amp;gt;&amp;lt;h2 class=&quot;hero-heading&quot;&amp;gt;BUY ONE FOR TWO&amp;lt;/h2&amp;gt;&amp;lt;p&amp;gt;Buy one to get both of the agency and personal theme&amp;lt;/p&amp;gt;&amp;lt;/div&amp;gt;&#39;</span><span class="p">,</span> <span class="nx">thumb</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="nx">url</span> <span class="o">:</span> <span class="s1">&#39;&#39;</span><span class="p">}</span>
+</span><span class='line'>        <span class="p">]</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Also in our erb files, if we want to reference image files we should use <strong>image_path</strong>.</p>
+
+<h2>Precompile configuration</h2>
+
+<p>By default when we run <strong>rake assets:precompile</strong>, Rails won&rsquo;t precompile the assets in vendor. So we need to add the loop template into configuration, in <strong>application.rb</strong>, we update like following,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>application.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;config.assets.precompile += %w(loop.css loop.js loop/</span><span class="o">*</span><span class="p">)</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>So it will precompile index files and all assets in <strong>vendor/assets/loop/loop</strong> folder.</p>
 ]]></content>
   </entry>
   
