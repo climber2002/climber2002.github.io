@@ -86,8 +86,7 @@ body.fullscreen-image-background {
 {% endcodeblock %}
 
 ## Update JS files
-Sometimes the JS files also reference image files, like following code,
-
+Sometimes the JS files also reference image files, like following code in loop.js,
 
 {% codeblock lang:javascript loop.js %}
 
