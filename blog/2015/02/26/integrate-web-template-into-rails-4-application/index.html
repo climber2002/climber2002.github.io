@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Category: deployment - AprilTouch</title>
+  <title>integrate web template into rails 4 application - AprilTouch</title>
   <meta name="author" content="Andy Wang">
 
   
-  <meta name="description" content="Category: deployment">
+  <meta name="description" content="In these days there are many free or paid web templates, especially for bootstrap templates. Recently I integrated a Bootstrap template called Loop &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://climber2002.github.ioblog/categories/deployment/">
+  <link rel="canonical" href="http://climber2002.github.io/blog/2015/02/26/integrate-web-template-into-rails-4-application/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -76,36 +76,107 @@
   <div id="main">
     <div id="content">
       <div>
-<article role="article">
+<article class="hentry" role="article">
   
   <header>
-    <h1 class="entry-title">Category: Deployment</h1>
+    
+      <h1 class="entry-title">Integrate Web Template Into Rails 4 Application</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-02-26T23:07:49+10:30" pubdate data-updated="true">Feb 26<span>th</span>, 2015</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
     
   </header>
-  
-  <div id="blog-archives" class="category">
 
 
+<div class="entry-content"><p>In these days there are many free or paid web templates, especially for bootstrap templates. Recently I integrated a Bootstrap template called <a href="https://wrapbootstrap.com/theme/loop-agency-and-personal-theme-WB053H4T4">Loop</a> which is bought on <a href="https://wrapbootstrap.com/">WrapBootstrap</a>. Here I will explain some practices and caveats about the integration.</p>
 
-  
-  <h2>2014</h2>
+<h2>Location</h2>
 
-<article>
-  
-<h1><a href="/blog/2014/09/07/depoly-a-rails-4-application-on-an-amazon-ec2-server/">Depoly a rails 4 application on an Amazon EC2 server</a></h1>
-<time datetime="2014-09-07T17:45:05+09:30" pubdate><span class='month'>Sep</span> <span class='day'>07</span> <span class='year'>2014</span></time>
+<p><img class="left" src="/images/loop.jpg"></p>
 
-<footer>
-  <span class="categories">posted in <a class='category' href='/blog/categories/deploy/'>deploy</a>, <a class='category' href='/blog/categories/deployment/'>deployment</a>, <a class='category' href='/blog/categories/rails/'>rails</a></span>
-</footer>
+<p>After extract the template zip file, we can see the organization is like the  structure on the left. This template actually contains two templates, one for personal and one for Agency, and what I want is for the Agency. We can see that it puts all resource files like javascripts, CSS files and fonts file in folder <em>assets</em>. I want to keep this structure, so it would be easier to upgrade if it releases new version. The best practice for put 3rd-party template is to put it in <strong>vendor/assets</strong>, so I create a folder <strong>loop</strong> under <strong>vendor/assets</strong> and and copy the <em>assets</em> folder to <strong>vendor/assets/loop</strong>, like the following figure,</p>
 
+<p><img src="/images/loop_copied.jpg"></p>
 
-</article>
+<p>Notice that I keep the <em>assets</em> folder from the original template, so when we reference the files under it from browser it will create some strange path like <em>/assets/assets/js/loop.js</em> because rails will append <em>assets</em> before the resource. If you want you can also rename the <em>assets</em> folder, like name it <em>loop</em>.</p>
 
+<h2>Create index file</h2>
 </div>
 
+
+  <footer>
+    <p class="meta">
+      
   
+
+<span class="byline author vcard">Posted by <span class="fn">Andy Wang</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-02-26T23:07:49+10:30" pubdate data-updated="true">Feb 26<span>th</span>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/rails/'>Rails</a>, <a class='category' href='/blog/categories/bootstrap/'>bootstrap</a>, <a class='category' href='/blog/categories/templates/'>templates</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://climber2002.github.io/blog/2015/02/26/integrate-web-template-into-rails-4-application/" data-via="" data-counturl="http://climber2002.github.io/blog/2015/02/26/integrate-web-template-into-rails-4-application/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/02/22/digging-rails-how-rails-finds-your-templates-part-2/" title="Previous Post: Digging Rails: How Rails finds your templates Part 2">&laquo; Digging Rails: How Rails finds your templates Part 2</a>
+      
+      
+    </p>
+  </footer>
 </article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
 
 </div>
 
@@ -160,7 +231,10 @@
       var disqus_shortname = 'climber2002';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://climber2002.github.io/blog/2015/02/26/integrate-web-template-into-rails-4-application/';
+        var disqus_url = 'http://climber2002.github.io/blog/2015/02/26/integrate-web-template-into-rails-4-application/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: bootstrap | AprilTouch]]></title>
+  <link href="http://climber2002.github.io/blog/categories/bootstrap/atom.xml" rel="self"/>
+  <link href="http://climber2002.github.io/"/>
+  <updated>2015-03-01T20:52:14+10:30</updated>
+  <id>http://climber2002.github.io/</id>
+  <author>
+    <name><![CDATA[Andy Wang]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[integrate web template into rails 4 application]]></title>
+    <link href="http://climber2002.github.io/blog/2015/02/26/integrate-web-template-into-rails-4-application/"/>
+    <updated>2015-02-26T23:07:49+10:30</updated>
+    <id>http://climber2002.github.io/blog/2015/02/26/integrate-web-template-into-rails-4-application</id>
+    <content type="html"><![CDATA[<p>In these days there are many free or paid web templates, especially for bootstrap templates. Recently I integrated a Bootstrap template called <a href="https://wrapbootstrap.com/theme/loop-agency-and-personal-theme-WB053H4T4">Loop</a> which is bought on <a href="https://wrapbootstrap.com/">WrapBootstrap</a>. Here I will explain some practices and caveats about the integration.</p>
+
+<h2>Location</h2>
+
+<p><img class="left" src="/images/loop.jpg"></p>
+
+<p>After extract the template zip file, we can see the organization is like the  structure on the left. This template actually contains two templates, one for personal and one for Agency, and what I want is for the Agency. We can see that it puts all resource files like javascripts, CSS files and fonts file in folder <em>assets</em>. I want to keep this structure, so it would be easier to upgrade if it releases new version. The best practice for put 3rd-party template is to put it in <strong>vendor/assets</strong>, so I create a folder <strong>loop</strong> under <strong>vendor/assets</strong> and and copy the <em>assets</em> folder to <strong>vendor/assets/loop</strong>, like the following figure,</p>
+
+<p><img src="/images/loop_copied.jpg"></p>
+
+<p>Notice that I keep the <em>assets</em> folder from the original template, so when we reference the files under it from browser it will create some strange path like <em>/assets/assets/js/loop.js</em> because rails will append <em>assets</em> before the resource. If you want you can also rename the <em>assets</em> folder, like name it <em>loop</em>.</p>
+
+<h2>Create index file</h2>
+]]></content>
+  </entry>
+  
+</feed>
