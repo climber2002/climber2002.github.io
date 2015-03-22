@@ -180,7 +180,7 @@ end
 
 {% endcodeblock %}
 
-It turns out that here is the the meat we are looking for. The **render_to_body** calls **_render_template**, and for the **_render_template**, it calls **view_renderer.render(view_context, options).
+It turns out that here is the the meat we are looking for. The **render_to_body** calls **_render_template**, and for the **_render_template**, it calls **view_renderer.render(view_context, options)**.
 
 The *view_renderer* is an instance of **ActionView::Renderer**, and when it's initialized, it's passing a *lookup_context* object, which is an instance of **ActionView::LookupContext**. The **ActionView::LookupContext** contains all information about looking for a template based on the options. So in next part we will check this class in detail, and check how **LookupContext**, **ViewPaths**, **PathSet** work together to find the template.
 
