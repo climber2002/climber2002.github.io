@@ -582,7 +582,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>It turns out that here is the the meat we are looking for. The <strong>render_to_body</strong> calls <strong>_render_template</strong>, and for the <strong>_render_template</strong>, it calls **view_renderer.render(view_context, options).</p>
+<p>It turns out that here is the the meat we are looking for. The <strong>render_to_body</strong> calls <strong>_render_template</strong>, and for the <strong>_render_template</strong>, it calls <strong>view_renderer.render(view_context, options)</strong>.</p>
 
 <p>The <em>view_renderer</em> is an instance of <strong>ActionView::Renderer</strong>, and when it&rsquo;s initialized, it&rsquo;s passing a <em>lookup_context</em> object, which is an instance of <strong>ActionView::LookupContext</strong>. The <strong>ActionView::LookupContext</strong> contains all information about looking for a template based on the options. So in next part we will check this class in detail, and check how <strong>LookupContext</strong>, <strong>ViewPaths</strong>, <strong>PathSet</strong> work together to find the template.</p>
 </div>
