@@ -359,7 +359,7 @@ end
 
 {% endcodeblock %}
 
-The **find_template** is implemented in module **ActionView::LookupContext::ViewPaths**, and **ActionView::LookupContext** includes this module. We can see that **find_template** is just an alias of method **find**. The **find** method delegats to *@view_paths*, which is an instance of **ActionView::PathSet**. So we need to understand what **ActionView::PathSet#find** is doing.
+The **find_template** is implemented in module **ActionView::LookupContext::ViewPaths**, and **ActionView::LookupContext** includes this module. We can see that **find_template** is just an alias of method **find**. The **find** method delegats to *@view_paths*, which is an instance of **ActionView::PathSet**. So we need to understand what **ActionView::PathSet#find** is doing. Actually the **ActionView::PathSet#find** will delegate the *find* to a set of **PathResolver**, which we will check in next part.
 
 
 
