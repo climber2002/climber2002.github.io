@@ -268,3 +268,98 @@ So the **initialize_details** is just to get the details values from *details* f
 
 Now let's check the **ActionView::LookupContext#find_template** method.
 
+{% codeblock lang:ruby rails/actionview/lib/action_view/lookup_context.rb %}
+
+module ActionView
+  
+  class LookupContext
+
+    include ViewPaths
+
+    # Helpers related to template lookup using the lookup context information.
+    module ViewPaths
+      attr_reader :view_paths, :html_fallback_for_js
+
+      # Whenever setting view paths, makes a copy so that we can manipulate them in
+      # instance objects as we wish.
+      def view_paths=(paths)
+        @view_paths = ActionView::PathSet.new(Array(paths))
+      end
+
+      def find(name, prefixes = [], partial = false, keys = [], options = {})
+        @view_paths.find(*args_for_lookup(name, prefixes, partial, keys, options))
+      end
+      alias :find_template :find
+
+      def find_all(name, prefixes = [], partial = false, keys = [], options = {})
+        @view_paths.find_all(*args_for_lookup(name, prefixes, partial, keys, options))
+      end
+
+      def exists?(name, prefixes = [], partial = false, keys = [], options = {})
+        @view_paths.exists?(*args_for_lookup(name, prefixes, partial, keys, options))
+      end
+      alias :template_exists? :exists?
+
+      # Adds fallbacks to the view paths. Useful in cases when you are rendering
+      # a :file.
+      def with_fallbacks
+        added_resolvers = 0
+        self.class.fallbacks.each do |resolver|
+          next if view_paths.include?(resolver)
+          view_paths.push(resolver)
+          added_resolvers += 1
+        end
+        yield
+      ensure
+        added_resolvers.times { view_paths.pop }
+      end
+
+    protected
+
+      def args_for_lookup(name, prefixes, partial, keys, details_options) #:nodoc:
+        name, prefixes = normalize_name(name, prefixes)
+        details, details_key = detail_args_for(details_options)
+        [name, prefixes, partial || false, details, details_key, keys]
+      end
+
+      # Compute details hash and key according to user options (e.g. passed from #render).
+      def detail_args_for(options)
+        return @details, details_key if options.empty? # most common path.
+        user_details = @details.merge(options)
+
+        if @cache
+          details_key = DetailsKey.get(user_details)
+        else
+          details_key = nil
+        end
+
+        [user_details, details_key]
+      end
+
+      # Support legacy foo.erb names even though we now ignore .erb
+      # as well as incorrectly putting part of the path in the template
+      # name instead of the prefix.
+      def normalize_name(name, prefixes) #:nodoc:
+        prefixes = prefixes.presence
+        parts    = name.to_s.split('/')
+        parts.shift if parts.first.empty?
+        name     = parts.pop
+
+        return name, prefixes || [""] if parts.empty?
+
+        parts    = parts.join('/')
+        prefixes = prefixes ? prefixes.map { |p| "#{p}/#{parts}" } : [parts]
+
+        return name, prefixes
+      end
+    end
+  end
+    
+end
+
+{% endcodeblock %}
+
+The **find_template** is implemented in module **ActionView::LookupContext::ViewPaths**, and **ActionView::LookupContext** includes this module. We can see that **find_template** is just an alias of method **find**. The **find** method delegats to *@view_paths*, which is an instance of **ActionView::PathSet**. So we need to understand what **ActionView::PathSet#find** is doing.
+
+
+
