@@ -4,7 +4,7 @@
   <title><![CDATA[Category: lookup_context | AprilTouch]]></title>
   <link href="http://climber2002.github.io/blog/categories/lookup-context/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2015-03-22T19:32:21+10:30</updated>
+  <updated>2015-03-23T22:55:18+10:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -12,6 +12,709 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Digging Rails: How Rails finds your templates Part 3]]></title>
+    <link href="http://climber2002.github.io/blog/2015/03/22/digging-rails-how-rails-finds-your-templates-part-3/"/>
+    <updated>2015-03-22T19:37:18+10:30</updated>
+    <id>http://climber2002.github.io/blog/2015/03/22/digging-rails-how-rails-finds-your-templates-part-3</id>
+    <content type="html"><![CDATA[<p>Long time no see! In <a href="http://climber2002.github.io/blog/2015/02/22/digging-rails-how-rails-finds-your-templates-part-2/">last part</a> we have shown that the template is rendered through <strong>ActionView::Renderer#render</strong> method, so in this part we will check this class in detail.</p>
+
+<p>Now let&rsquo;s check this class,</p>
+
+<h2>ActionView::Renderer</h2>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/actionview/lib/action_view/renderer/renderer.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module ActionView&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="c1"># This is the main entry point for rendering. It basically delegates</span>
+</span><span class='line'>  <span class="c1"># to other objects like TemplateRenderer and PartialRenderer which</span>
+</span><span class='line'>  <span class="c1"># actually renders the template.</span>
+</span><span class='line'>  <span class="c1">#</span>
+</span><span class='line'>  <span class="c1"># The Renderer will parse the options from the +render+ or +render_body+</span>
+</span><span class='line'>  <span class="c1"># method and render a partial or a template based on the options. The</span>
+</span><span class='line'>  <span class="c1"># +TemplateRenderer+ and +PartialRenderer+ objects are wrappers which do all</span>
+</span><span class='line'>  <span class="c1"># the setup and logic necessary to render a view and a new object is created</span>
+</span><span class='line'>  <span class="c1"># each time +render+ is called.</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">Renderer</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;attr_accessor :lookup_context</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">def initialize(lookup_context)</span>
+</span><span class='line'><span class="sr">  @lookup_context = lookup_context</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr"># Main render entry point shared by AV and AC.</span>
+</span><span class='line'><span class="sr">def render(context, options)</span>
+</span><span class='line'><span class="sr">  if options.key?(:partial)</span>
+</span><span class='line'><span class="sr">    render_partial(context, options)</span>
+</span><span class='line'><span class="sr">  else</span>
+</span><span class='line'><span class="sr">    render_template(context, options)</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr"># Direct accessor to template rendering.</span>
+</span><span class='line'><span class="sr">def render_template(context, options) #:nodoc:</span>
+</span><span class='line'><span class="sr">  TemplateRenderer.new(@lookup_context).render(context, options)</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end</span>
+</span><span class='line'><span class="sr">end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>This class is initialized with a lookup_context, which is of class <strong>ActionView::LookupContext</strong>. And when the <strong>render</strong> method is called, for a normal template, the <em>options</em> has no <em>:partial</em> key, so <strong>render_template</strong> is called. We can see that the <strong>render_template</strong> method is actually creates an instance of <strong>TemplateRenderer</strong> and calls its <strong>render</strong> method.</p>
+
+<p>So let&rsquo;s have a look at this <strong>TemplateRenderer</strong> class,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/actionview/lib/action_view/renderer/template_renderer.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module ActionView&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">class</span> <span class="nc">TemplateRenderer</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="no">AbstractRenderer</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;def render(context, options)</span>
+</span><span class='line'><span class="sr">  @view    = context</span>
+</span><span class='line'><span class="sr">  @details = extract_details(options)</span>
+</span><span class='line'><span class="sr">  template = determine_template(options)</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  prepend_formats(template.formats)</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  @lookup_context.rendered_format ||= (template.formats.first || formats.first)</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  render_template(template, options[:layout], options[:locals])</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">private</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr"># Determine the template to be rendered using the given options.</span>
+</span><span class='line'><span class="sr">def determine_template(options)</span>
+</span><span class='line'><span class="sr">  keys = options.has_key?(:locals) ? options[:locals].keys : []</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  if options.key?(:body)</span>
+</span><span class='line'><span class="sr">    Template::Text.new(options[:body])</span>
+</span><span class='line'><span class="sr">  elsif options.key?(:text)</span>
+</span><span class='line'><span class="sr">    Template::Text.new(options[:text], formats.first)</span>
+</span><span class='line'><span class="sr">  elsif options.key?(:plain)</span>
+</span><span class='line'><span class="sr">    Template::Text.new(options[:plain])</span>
+</span><span class='line'><span class="sr">  elsif options.key?(:html)</span>
+</span><span class='line'><span class="sr">    Template::HTML.new(options[:html], formats.first)</span>
+</span><span class='line'><span class="sr">  elsif options.key?(:file)</span>
+</span><span class='line'><span class="sr">    with_fallbacks { find_template(options[:file], nil, false, keys, @details) }</span>
+</span><span class='line'><span class="sr">  elsif options.key?(:inline)</span>
+</span><span class='line'><span class="sr">    handler = Template.handler_for_extension(options[:type] || &quot;erb&quot;)</span>
+</span><span class='line'><span class="sr">    Template.new(options[:inline], &quot;inline template&quot;, handler, :locals =&amp;gt; keys)</span>
+</span><span class='line'><span class="sr">  elsif options.key?(:template)</span>
+</span><span class='line'><span class="sr">    if options[:template].respond_to?(:render)</span>
+</span><span class='line'><span class="sr">      options[:template]</span>
+</span><span class='line'><span class="sr">    else</span>
+</span><span class='line'><span class="sr">      find_template(options[:template], options[:prefixes], false, keys, @details)</span>
+</span><span class='line'><span class="sr">    end</span>
+</span><span class='line'><span class="sr">  else</span>
+</span><span class='line'><span class="sr">    raise ArgumentError, &quot;You invoked render but did not give any of :partial, :template, :inline, :file, :plain, :text or :body option.&quot;</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end</span>
+</span><span class='line'><span class="sr">end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>This class extends from <strong>ActionView::AbstractRenderer</strong>, and the template is determined by the <strong>determinate_template</strong> method, we can see that this method checks some keys in <em>options</em> hash, for example <em>:body</em>, <em>:text</em>, etc. And last one it checks the <strong>:template</strong> key. From <a href="http://climber2002.github.io/blog/2015/02/21/how-rails-finds-your-templates-part-1/">Part 1</a> we already knew that if the <strong>:template</strong> key is not set explicitly, the <strong>options[:template]</strong> will be the action name. And <strong>options[:prefixes]</strong> is an array. For example, when the <em>index</em> action of <em>ArticlesController</em> is accessed, the <em>:template</em> and <em>:prefixes</em> will be,</p>
+
+<ul>
+<li><strong>:prefixes</strong> : array [“articles”, “application”]</li>
+<li><strong>:template</strong> : string “index”</li>
+</ul>
+
+
+<p>So the template is found by calling <strong>find_template</strong> method, and this method is defined in super class <strong>ActionView::AbstractRenderer</strong>, and let&rsquo;s have a look at this class.</p>
+
+<h2>ActionView::AbstractRenderer</h2>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/actionview/lib/action_view/renderer/abstract_renderer.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module ActionView&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">class</span> <span class="nc">AbstractRenderer</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;delegate :find_template, :template_exists?, :with_fallbacks, :with_layout_format, :formats, :to =&amp;gt; :@lookup_context</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="sr">def initialize(lookup_context)</span>
+</span><span class='line'><span class="sr">  @lookup_context = lookup_context</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">def render</span>
+</span><span class='line'><span class="sr">  raise NotImplementedError</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">protected</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">def extract_details(options)</span>
+</span><span class='line'><span class="sr">  @lookup_context.registered_details.each_with_object({}) do |key, details|</span>
+</span><span class='line'><span class="sr">    value = options[key]</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">    details[key] = Array(value) if value</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We can see that the <strong>find_template</strong> method actually is delegated to <strong>lookup_context</strong>, we will check this method later, but remember that when <strong>find_template</strong> method is called, it is passed a <em>details</em> object, which is returned by the <strong>extract_details</strong> method.</p>
+
+<p>Check the <strong>extract_details</strong> method above, we can see that this method returns a hash. It get the <em>registered_details</em> from the <em>lookup_context</em> and then check if the options contains the key, if yes, the result hush will be the options value for that key(tranformed to an array).</p>
+
+<p>So what&rsquo;s in this <strong>ActionView::LookupContext#registered_details</strong>? Let&rsquo;s check that.</p>
+
+<h2>ActionView::LookupContext#registered_details</h2>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/actionview/lib/action_view/lookup_context.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module ActionView&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="c1"># LookupContext is the object responsible to hold all information required to lookup</span>
+</span><span class='line'>  <span class="c1"># templates, i.e. view paths and details. The LookupContext is also responsible to</span>
+</span><span class='line'>  <span class="c1"># generate a key, given to view paths, used in the resolver cache lookup. Since</span>
+</span><span class='line'>  <span class="c1"># this key is generated just once during the request, it speeds up all cache accesses.</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">LookupContext</span> <span class="c1">#:nodoc:&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">mattr_accessor</span> <span class="ss">:registered_details</span>
+</span><span class='line'><span class="nb">self</span><span class="o">.</span><span class="n">registered_details</span> <span class="o">=</span> <span class="o">[]</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">register_detail</span><span class="p">(</span><span class="nb">name</span><span class="p">,</span> <span class="n">options</span> <span class="o">=</span> <span class="p">{},</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">block</span><span class="p">)</span>
+</span><span class='line'>  <span class="nb">self</span><span class="o">.</span><span class="n">registered_details</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="nb">name</span>
+</span><span class='line'>  <span class="kp">initialize</span> <span class="o">=</span> <span class="n">registered_details</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="n">n</span><span class="o">|</span> <span class="s2">&quot;@details[:</span><span class="si">#{</span><span class="n">n</span><span class="si">}</span><span class="s2">] = details[:</span><span class="si">#{</span><span class="n">n</span><span class="si">}</span><span class="s2">] || default_</span><span class="si">#{</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="no">Accessors</span><span class="o">.</span><span class="n">send</span> <span class="ss">:define_method</span><span class="p">,</span> <span class="ss">:&quot;default_</span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="ss">&quot;</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">block</span>
+</span><span class='line'>  <span class="no">Accessors</span><span class="o">.</span><span class="n">module_eval</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">-</span><span class="no">METHOD</span><span class="p">,</span> <span class="bp">__FILE__</span><span class="p">,</span> <span class="bp">__LINE__</span> <span class="o">+</span> <span class="mi">1</span>
+</span><span class='line'>    <span class="k">def</span> <span class="c1">#{name}</span>
+</span><span class='line'>      <span class="vi">@details</span><span class="o">.</span><span class="n">fetch</span><span class="p">(:</span><span class="c1">#{name}, [])</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="c1">#{name}=(value)</span>
+</span><span class='line'>      <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">present?</span> <span class="p">?</span> <span class="nb">Array</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="p">:</span> <span class="n">default_</span><span class="c1">#{name}</span>
+</span><span class='line'>      <span class="n">_set_detail</span><span class="p">(:</span><span class="c1">#{name}, value) if value != @details[:#{name}]</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">remove_possible_method</span> <span class="ss">:initialize_details</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">initialize_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
+</span><span class='line'>      <span class="c1">#{initialize.join(&quot;\n&quot;)}</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="no">METHOD</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Holds accessors for the registered details.</span>
+</span><span class='line'><span class="k">module</span> <span class="nn">Accessors</span> <span class="c1">#:nodoc:</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">register_detail</span><span class="p">(</span><span class="ss">:locale</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">locales</span> <span class="o">=</span> <span class="o">[</span><span class="no">I18n</span><span class="o">.</span><span class="n">locale</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">locales</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span><span class="no">I18n</span><span class="o">.</span><span class="n">fallbacks</span><span class="o">[</span><span class="no">I18n</span><span class="o">.</span><span class="n">locale</span><span class="o">]</span><span class="p">)</span> <span class="k">if</span> <span class="no">I18n</span><span class="o">.</span><span class="n">respond_to?</span> <span class="ss">:fallbacks</span>
+</span><span class='line'>  <span class="n">locales</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span><span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="no">I18n</span><span class="o">.</span><span class="n">default_locale</span>
+</span><span class='line'>  <span class="n">locales</span><span class="o">.</span><span class="n">uniq!</span>
+</span><span class='line'>  <span class="n">locales</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">register_detail</span><span class="p">(</span><span class="ss">:formats</span><span class="p">)</span> <span class="p">{</span> <span class="ss">ActionView</span><span class="p">:</span><span class="ss">:Base</span><span class="o">.</span><span class="n">default_formats</span> <span class="o">||</span> <span class="o">[</span><span class="ss">:html</span><span class="p">,</span> <span class="ss">:text</span><span class="p">,</span> <span class="ss">:js</span><span class="p">,</span> <span class="ss">:css</span><span class="p">,</span>  <span class="ss">:xml</span><span class="p">,</span> <span class="ss">:json</span><span class="o">]</span> <span class="p">}</span>
+</span><span class='line'><span class="n">register_detail</span><span class="p">(</span><span class="ss">:variants</span><span class="p">)</span> <span class="p">{</span> <span class="o">[]</span> <span class="p">}</span>
+</span><span class='line'><span class="n">register_detail</span><span class="p">(</span><span class="ss">:handlers</span><span class="p">){</span> <span class="ss">Template</span><span class="p">:</span><span class="ss">:Handlers</span><span class="o">.</span><span class="n">extensions</span> <span class="p">}</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>We can see that it has a module attribute <strong>registered_details</strong>, which is an array, whose elements is the detail name.</p>
+
+<p>For example, in a rails console we can call <strong>ActionView::LookupContext.registered_details</strong> to see the default detail keys.</p>
+
+<p><img class="left" src="/images/details.png"></p>
+
+<p>We can see that by default it registered 4 details: :locale, :formats, :variants and :handlers, just as in above code, the <strong>register_detail</strong> is called 4 times and passed those details keys one by one.</p>
+
+<p>And also the class maintains an instance variable called <strong>@details</strong> which is a hash. The key of this hash is the detail key, the value normally is an array which is the detail value initialized from <strong>initialize_details</strong>. (We will talk about <strong>initialize_details</strong> later)</p>
+
+<p>Each time the <strong>register_detail</strong> is called, it will add several instance methods to the class. For example, when passed <em>:locale</em> to the method, it will define following methods,</p>
+
+<ul>
+<li><strong>default_locale</strong> : returns the default locale which is the result returned from the passed block.</li>
+<li><strong>locale</strong>: which returns the locale value stored in instance variable <strong>@details</strong></li>
+<li><strong>locale=</strong>: which sets the locale value to <strong>@details</strong>.</li>
+</ul>
+
+
+<p>And also each time the registered_detail is called, the <strong>initialize_details</strong> will be redefined. For example, when firstly calling <strong>register_detail(:locale)</strong>, the <strong>initialize_details</strong> will be like following,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module ActionView&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">class</span> <span class="nc">LookupContext</span> <span class="c1">#:nodoc:&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">initialize_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@details</span><span class="o">[</span><span class="ss">:locale</span><span class="o">]</span> <span class="o">=</span> <span class="n">details</span><span class="o">[</span><span class="ss">:locale</span><span class="o">]</span> <span class="o">||</span> <span class="n">default_locale</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>And then when <strong>register_detail(:formats)</strong> is called, the <strong>initialize_details</strong> will be redefined like following,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module ActionView&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">class</span> <span class="nc">LookupContext</span> <span class="c1">#:nodoc:&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">initialize_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@details</span><span class="o">[</span><span class="ss">:locale</span><span class="o">]</span> <span class="o">=</span> <span class="n">details</span><span class="o">[</span><span class="ss">:locale</span><span class="o">]</span> <span class="o">||</span> <span class="n">default_locale</span>
+</span><span class='line'>  <span class="vi">@details</span><span class="o">[</span><span class="ss">:formats</span><span class="o">]</span> <span class="o">=</span> <span class="n">details</span><span class="o">[</span><span class="ss">:formats</span><span class="o">]</span> <span class="o">||</span> <span class="n">default_formats</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>So the <strong>initialize_details</strong> is just to get the details values from <em>details</em> for each registered detail key, if the key is not found, it will set the default detail values.</p>
+
+<h2>ActionView::LookupContext#find_template</h2>
+
+<p>Now let&rsquo;s check the <strong>ActionView::LookupContext#find_template</strong> method.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/actionview/lib/action_view/lookup_context.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module ActionView&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">class</span> <span class="nc">LookupContext</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;include ViewPaths</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr"># Helpers related to template lookup using the lookup context information.</span>
+</span><span class='line'><span class="sr">module ViewPaths</span>
+</span><span class='line'><span class="sr">  attr_reader :view_paths, :html_fallback_for_js</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  # Whenever setting view paths, makes a copy so that we can manipulate them in</span>
+</span><span class='line'><span class="sr">  # instance objects as we wish.</span>
+</span><span class='line'><span class="sr">  def view_paths=(paths)</span>
+</span><span class='line'><span class="sr">    @view_paths = ActionView::PathSet.new(Array(paths))</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  def find(name, prefixes = [], partial = false, keys = [], options = {})</span>
+</span><span class='line'><span class="sr">    @view_paths.find(*args_for_lookup(name, prefixes, partial, keys, options))</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'><span class="sr">  alias :find_template :find</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  def find_all(name, prefixes = [], partial = false, keys = [], options = {})</span>
+</span><span class='line'><span class="sr">    @view_paths.find_all(*args_for_lookup(name, prefixes, partial, keys, options))</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  def exists?(name, prefixes = [], partial = false, keys = [], options = {})</span>
+</span><span class='line'><span class="sr">    @view_paths.exists?(*args_for_lookup(name, prefixes, partial, keys, options))</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'><span class="sr">  alias :template_exists? :exists?</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  # Adds fallbacks to the view paths. Useful in cases when you are rendering</span>
+</span><span class='line'><span class="sr">  # a :file.</span>
+</span><span class='line'><span class="sr">  def with_fallbacks</span>
+</span><span class='line'><span class="sr">    added_resolvers = 0</span>
+</span><span class='line'><span class="sr">    self.class.fallbacks.each do |resolver|</span>
+</span><span class='line'><span class="sr">      next if view_paths.include?(resolver)</span>
+</span><span class='line'><span class="sr">      view_paths.push(resolver)</span>
+</span><span class='line'><span class="sr">      added_resolvers += 1</span>
+</span><span class='line'><span class="sr">    end</span>
+</span><span class='line'><span class="sr">    yield</span>
+</span><span class='line'><span class="sr">  ensure</span>
+</span><span class='line'><span class="sr">    added_resolvers.times { view_paths.pop }</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">protected</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  def args_for_lookup(name, prefixes, partial, keys, details_options) #:nodoc:</span>
+</span><span class='line'><span class="sr">    name, prefixes = normalize_name(name, prefixes)</span>
+</span><span class='line'><span class="sr">    details, details_key = detail_args_for(details_options)</span>
+</span><span class='line'><span class="sr">    [name, prefixes, partial || false, details, details_key, keys]</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  # Compute details hash and key according to user options (e.g. passed from #render).</span>
+</span><span class='line'><span class="sr">  def detail_args_for(options)</span>
+</span><span class='line'><span class="sr">    return @details, details_key if options.empty? # most common path.</span>
+</span><span class='line'><span class="sr">    user_details = @details.merge(options)</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">    if @cache</span>
+</span><span class='line'><span class="sr">      details_key = DetailsKey.get(user_details)</span>
+</span><span class='line'><span class="sr">    else</span>
+</span><span class='line'><span class="sr">      details_key = nil</span>
+</span><span class='line'><span class="sr">    end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">    [user_details, details_key]</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">  # Support legacy foo.erb names even though we now ignore .erb</span>
+</span><span class='line'><span class="sr">  # as well as incorrectly putting part of the path in the template</span>
+</span><span class='line'><span class="sr">  # name instead of the prefix.</span>
+</span><span class='line'><span class="sr">  def normalize_name(name, prefixes) #:nodoc:</span>
+</span><span class='line'><span class="sr">    prefixes = prefixes.presence</span>
+</span><span class='line'><span class="sr">    parts    = name.to_s.split(&#39;/</span><span class="s1">&#39;)</span>
+</span><span class='line'><span class="s1">    parts.shift if parts.first.empty?</span>
+</span><span class='line'><span class="s1">    name     = parts.pop</span>
+</span><span class='line'>
+</span><span class='line'><span class="s1">    return name, prefixes || [&quot;&quot;] if parts.empty?</span>
+</span><span class='line'>
+</span><span class='line'><span class="s1">    parts    = parts.join(&#39;</span><span class="o">/</span><span class="err">&#39;</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">prefixes</span> <span class="o">=</span> <span class="n">prefixes</span> <span class="p">?</span> <span class="n">prefixes</span><span class="o">.</span><span class="n">map</span> <span class="p">{</span> <span class="o">|</span><span class="nb">p</span><span class="o">|</span> <span class="s2">&quot;</span><span class="si">#{</span><span class="nb">p</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">parts</span><span class="si">}</span><span class="s2">&quot;</span> <span class="p">}</span> <span class="p">:</span> <span class="o">[</span><span class="n">parts</span><span class="o">]</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="nb">name</span><span class="p">,</span> <span class="n">prefixes</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The <strong>find_template</strong> is implemented in module <strong>ActionView::LookupContext::ViewPaths</strong>, and <strong>ActionView::LookupContext</strong> includes this module. We can see that <strong>find_template</strong> is just an alias of method <strong>find</strong>. The <strong>find</strong> method delegats to <em>@view_paths</em>, which is an instance of <strong>ActionView::PathSet</strong>. So we need to understand what <strong>ActionView::PathSet#find</strong> is doing. Actually the <strong>ActionView::PathSet#find</strong> will delegate the <em>find</em> to a set of <strong>PathResolver</strong>, which we will check in next part.</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Digging Rails: How Rails finds your templates Part 2]]></title>
