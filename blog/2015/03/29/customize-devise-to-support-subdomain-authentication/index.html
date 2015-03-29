@@ -1,0 +1,633 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Customize Devise to support Multitenancy authentication - AprilTouch</title>
+  <meta name="author" content="Andy Wang">
+
+  
+  <meta name="description" content="Last year I read the book Multitenancy with Rails written by Ryan Bigg. In the book when he implements the authentication for the multi-tenancy, he &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://climber2002.github.io/blog/2015/03/29/customize-devise-to-support-subdomain-authentication/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="AprilTouch" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-51109944-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">AprilTouch</a></h1>
+  
+    <h2>My blog about Ruby and iOS development</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:climber2002.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/about-me">About Me</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Customize Devise to Support Multitenancy Authentication</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-03-29T21:13:21+10:30" pubdate data-updated="true">Mar 29<span>th</span>, 2015</time>
+        
+         | <a href="#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Last year I read the book <a href="https://leanpub.com/multi-tenancy-rails">Multitenancy with Rails</a> written by Ryan Bigg. In the book when he implements the authentication for the multi-tenancy, he uses <a href="https://github.com/hassox/warden">Warden</a> instead of Devise, cause using Devise will need a lot of customization. And Recently I need to implement this multi-tenancy authentication for a Rails application, and I want to use Devise, so I checked the source code of Warden and Devise and found a way to customize Devise to do it.</p>
+
+<p>In my application, I have two models, <strong>Merchant</strong> and <strong>User</strong>, one user can be the owner of one or more merchant, so they are a has_and_belongs_to_many relationship.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">Merchant</span> <span class="o">&lt;</span> <span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Base</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="no">EXCLUDED_SUBDOMAINS</span> <span class="o">=</span> <span class="sx">%w(admin www administrator admins owner)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">validates_exclusion_of</span> <span class="ss">:subdomain</span><span class="p">,</span> <span class="k">in</span><span class="p">:</span> <span class="no">EXCLUDED_SUBDOMAINS</span><span class="p">,</span>
+</span><span class='line'>    <span class="ss">message</span><span class="p">:</span> <span class="s2">&quot;is not allowed. Please choose another subdomain&quot;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">validates_format_of</span> <span class="ss">:subdomain</span><span class="p">,</span> <span class="ss">with</span><span class="p">:</span> <span class="sr">/\A[\w\-]+\Z/i</span><span class="p">,</span> <span class="n">allow_blank</span><span class="p">:</span> <span class="kp">true</span><span class="p">,</span>
+</span><span class='line'>    <span class="ss">message</span><span class="p">:</span> <span class="s2">&quot;is not allowed. Please choose another subdomain.&quot;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">validates</span> <span class="ss">:subdomain</span><span class="p">,</span> <span class="ss">presence</span><span class="p">:</span> <span class="kp">true</span><span class="p">,</span> <span class="ss">uniqueness</span><span class="p">:</span> <span class="kp">true</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">mount_uploader</span> <span class="ss">:avatar</span><span class="p">,</span> <span class="no">AvatarUploader</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">before_validation</span> <span class="k">do</span>
+</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">subdomain</span> <span class="o">=</span> <span class="n">subdomain</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">downcase</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">has_and_belongs_to_many</span> <span class="ss">:owners</span><span class="p">,</span> <span class="n">class_name</span><span class="p">:</span> <span class="s1">&#39;User&#39;</span><span class="p">,</span> <span class="n">join_table</span><span class="p">:</span> <span class="s1">&#39;merchants_owners&#39;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">owner?</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">return</span> <span class="kp">false</span> <span class="k">unless</span> <span class="n">user</span><span class="o">.</span><span class="n">present?</span>
+</span><span class='line'>    <span class="o">!!</span><span class="n">owners</span><span class="o">.</span><span class="n">find_by</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">User</span> <span class="o">&lt;</span> <span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Base</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Each merchant can access its web interface through a subdomain URL. In model <strong>Merchant</strong> there is a unique attribute <strong>subdomain</strong>, this will be used for subdomain. For example, one merchant&rsquo;s subdomain is <em>skywatch</em>, then the URL for this merchant is <a href="http://skywatch.xhop.pe">http://skywatch.xhop.pe</a> . And for the authentication, a user can login this URL only if he is this merchant&rsquo;s owner.</p>
+
+<p>And in <strong>Merchant</strong> class we defined an instance method <strong>owner?</strong> of check if a user is owner of a merchant.</p>
+
+<h2>Subdomain Routes Configuration</h2>
+
+<p>For all controllers related to a merchant, I put the controllers under a module <strong>Merchant</strong>.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">constraints</span><span class="p">(</span><span class="ss">Constraints</span><span class="p">:</span><span class="ss">:SubdomainRequired</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">root</span> <span class="s1">&#39;merchant/dashboard#index&#39;</span><span class="p">,</span> <span class="ss">as</span><span class="p">:</span> <span class="ss">:merchant_root</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">namespace</span> <span class="ss">:merchant</span> <span class="k">do</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">resources</span> <span class="s1">&#39;products&#39;</span>
+</span><span class='line'>    <span class="c1"># and other resources</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We set a constraint <strong>Constraints::SubdomainRequired</strong> to match merchant&rsquo;s routes.</p>
+
+<figure class='code'><figcaption><span>lib/constraints/subdomain_required.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Constraints</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">SubdomainRequired</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">matches?</span><span class="p">(</span><span class="n">request</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">request</span><span class="o">.</span><span class="n">subdomain</span><span class="o">.</span><span class="n">present?</span> <span class="o">&amp;&amp;</span> <span class="n">request</span><span class="o">.</span><span class="n">subdomain</span> <span class="o">!=</span> <span class="s2">&quot;www&quot;</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>So only when the request has a subdomain and the subdomain is not <em>www</em>, then it will match merchants&#8217; routes.</p>
+
+<h2>Warden and Devise</h2>
+
+<p>Warden is a <a href="http://rack.github.io/">Rack</a> middleware which provides authentication for web applications. You can register <em>Strategies</em> in Warden to define how to authenticate a user.</p>
+
+<p>For example, the following is to add a <strong>:password</strong> strategy in Warden</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="ss">Warden</span><span class="p">:</span><span class="ss">:Strategies</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="ss">:password</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">valid?</span>
+</span><span class='line'>    <span class="n">params</span><span class="o">[</span><span class="s1">&#39;username&#39;</span><span class="o">]</span> <span class="o">||</span> <span class="n">params</span><span class="o">[</span><span class="s1">&#39;password&#39;</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">authenticate!</span>
+</span><span class='line'>    <span class="n">u</span> <span class="o">=</span> <span class="no">User</span><span class="o">.</span><span class="n">authenticate</span><span class="p">(</span><span class="n">params</span><span class="o">[</span><span class="s1">&#39;username&#39;</span><span class="o">]</span><span class="p">,</span> <span class="n">params</span><span class="o">[</span><span class="s1">&#39;password&#39;</span><span class="o">]</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">u</span><span class="o">.</span><span class="n">nil?</span> <span class="p">?</span> <span class="nb">fail</span><span class="o">!</span><span class="p">(</span><span class="s2">&quot;Could not log in&quot;</span><span class="p">)</span> <span class="p">:</span> <span class="n">success!</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>When register a strategy, you should provide a name(<strong>:password</strong> as above), and an object or block, the object should implement two methods,</p>
+
+<ul>
+<li><p><strong>valid?</strong>: It’s optional to declare a valid? method, and if you don’t declare it, the strategy will always be run. If you do declare it though, the strategy will only be tried if #valid? evaluates to true. This could be used to check if all necessary parameters are valid in the request</p></li>
+<li><p><strong>authenticate!</strong>: This is where the work of actually authenticating the request steps in. Here’s where the logic for authenticating your requests occurs.</p></li>
+</ul>
+
+
+<p>You have a number of request related methods available.</p>
+
+<ul>
+<li>request # Rack::Request object</li>
+<li>session # The session object for the request</li>
+<li>params # The parameters of the request</li>
+<li>env # The Rack env object</li>
+</ul>
+
+
+<p>There are also a number of actions you can take in your strategy.</p>
+
+<ul>
+<li>halt! # halts cascading of strategies. Makes this one the last one processed</li>
+<li>pass # ignore this strategy. It is not required to call this and this is only sugar</li>
+<li>success! # Supply success! with a user object to log in a user. Causes a halt!</li>
+<li>fail! # Sets the strategy to fail. Causes a halt!</li>
+<li>redirect! # redirect to another url. You can supply it with params to be encoded and also options. Causes a halt!</li>
+<li>custom! # return a custom rack array to be handed back untouched. Causes a halt!
+There’s a couple of misc things to do too:</li>
+</ul>
+
+
+<p>headers # set headers to respond with relevant to the strategy
+errors # provides access to an errors object. Here you can put in errors relating to authentication</p>
+
+<p>For more information check <a href="https://github.com/hassox/warden/wiki/Strategies">the Warden documents</a>.</p>
+
+<p>Devise depends on Warden, and it registers a Strategy <strong>database_authenticatable</strong> by default,</p>
+
+<figure class='code'><figcaption><span>devise/lib/devise/strategies/database_authenticatable.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Devise</span>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Strategies</span>
+</span><span class='line'>    <span class="c1"># Default strategy for signing in a user, based on their email and password in the database.</span>
+</span><span class='line'>    <span class="k">class</span> <span class="nc">DatabaseAuthenticatable</span> <span class="o">&lt;</span> <span class="no">Authenticatable</span>
+</span><span class='line'>      <span class="k">def</span> <span class="nf">authenticate!</span>
+</span><span class='line'>        <span class="n">resource</span>  <span class="o">=</span> <span class="n">valid_password?</span> <span class="o">&amp;&amp;</span> <span class="n">mapping</span><span class="o">.</span><span class="n">to</span><span class="o">.</span><span class="n">find_for_database_authentication</span><span class="p">(</span><span class="n">authentication_hash</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">encrypted</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="n">validate</span><span class="p">(</span><span class="n">resource</span><span class="p">){</span> <span class="n">encrypted</span> <span class="o">=</span> <span class="kp">true</span><span class="p">;</span> <span class="n">resource</span><span class="o">.</span><span class="n">valid_password?</span><span class="p">(</span><span class="n">password</span><span class="p">)</span> <span class="p">}</span>
+</span><span class='line'>          <span class="n">resource</span><span class="o">.</span><span class="n">after_database_authentication</span>
+</span><span class='line'>          <span class="n">success!</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">mapping</span><span class="o">.</span><span class="n">to</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span> <span class="k">if</span> <span class="o">!</span><span class="n">encrypted</span> <span class="o">&amp;&amp;</span> <span class="no">Devise</span><span class="o">.</span><span class="n">paranoid</span>
+</span><span class='line'>        <span class="nb">fail</span><span class="p">(</span><span class="ss">:not_found_in_database</span><span class="p">)</span> <span class="k">unless</span> <span class="n">resource</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="ss">Warden</span><span class="p">:</span><span class="ss">:Strategies</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="ss">:database_authenticatable</span><span class="p">,</span>
+</span><span class='line'><span class="ss">Devise</span><span class="p">:</span><span class="ss">:Strategies</span><span class="o">::</span><span class="no">DatabaseAuthenticatable</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <strong>Devise::Strategies::DatabaseAuthenticatable</strong> extends from <strong>Devise::Strategies::Authentiatable</strong>, which provides some methods for common authenticate behavior. If you are interested you could check Devise&rsquo;s source code. In above code, we can see that firstly it finds the <em>resource</em> from authentication_hash, for our case, the <em>resource</em> will be a <strong>User</strong> instance, and then if validate resource&rsquo;s password successfully, it calls <em>success!</em>, otherwise it calls <em>fail</em>.</p>
+
+<h2>Customize Devise Strategy</h2>
+
+<p>So for our case, we should not only check if the user&rsquo;s username and password are valid, but also we must check if the user is an owner of the merchant.</p>
+
+<p>Let&rsquo;s create class called <strong>Devise::Strategies::DatabaseAuthenticatableForMerchantOwner</strong>, we put this class in <strong>lib</strong> folder,</p>
+
+<figure class='code'><figcaption><span>lib/devise/strategies/database_authenticatable_for_merchant_owner.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Devise</span>
+</span><span class='line'>  <span class="k">module</span> <span class="nn">Strategies</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">class</span> <span class="nc">DatabaseAuthenticatableForMerchantOwner</span> <span class="o">&lt;</span> <span class="no">Authenticatable</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1"># This code is mostly copied from Devise, but except the authentication of devise</span>
+</span><span class='line'>      <span class="c1"># the class includes this module should define a method &#39;custom_validate(resource)&#39; to</span>
+</span><span class='line'>      <span class="c1"># provide other validates, for example if the resource is admin, or if th resource is </span>
+</span><span class='line'>      <span class="c1"># an owner of a merchant etc..</span>
+</span><span class='line'>      <span class="k">def</span> <span class="nf">authenticate!</span>
+</span><span class='line'>        <span class="n">resource</span>  <span class="o">=</span> <span class="n">valid_password?</span> <span class="o">&amp;&amp;</span> <span class="n">mapping</span><span class="o">.</span><span class="n">to</span><span class="o">.</span><span class="n">find_for_database_authentication</span><span class="p">(</span><span class="n">authentication_hash</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">encrypted</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">if</span> <span class="n">validate</span><span class="p">(</span><span class="n">resource</span><span class="p">){</span> <span class="n">encrypted</span> <span class="o">=</span> <span class="kp">true</span><span class="p">;</span> <span class="n">resource</span><span class="o">.</span><span class="n">valid_password?</span><span class="p">(</span><span class="n">password</span><span class="p">)</span> <span class="p">}</span> <span class="o">&amp;&amp;</span>
+</span><span class='line'>          <span class="n">custom_validate</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
+</span><span class='line'>            <span class="n">resource</span><span class="o">.</span><span class="n">after_database_authentication</span>
+</span><span class='line'>            <span class="n">success!</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">else</span>
+</span><span class='line'>          <span class="n">mapping</span><span class="o">.</span><span class="n">to</span><span class="o">.</span><span class="n">new</span><span class="o">.</span><span class="n">password</span> <span class="o">=</span> <span class="n">password</span> <span class="k">if</span> <span class="o">!</span><span class="n">encrypted</span> <span class="o">&amp;&amp;</span> <span class="no">Devise</span><span class="o">.</span><span class="n">paranoid</span>
+</span><span class='line'>          <span class="nb">fail</span><span class="p">(</span><span class="ss">:not_found_in_database</span><span class="p">)</span>
+</span><span class='line'>          <span class="n">halt!</span>
+</span><span class='line'>        <span class="k">end</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">def</span> <span class="nf">custom_validate</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
+</span><span class='line'>        <span class="n">merchant</span> <span class="o">=</span> <span class="n">get_merchant</span>
+</span><span class='line'>        <span class="k">return</span> <span class="kp">false</span> <span class="k">unless</span> <span class="n">merchant</span><span class="o">.</span><span class="n">present?</span>
+</span><span class='line'>        <span class="n">merchant</span><span class="o">.</span><span class="n">owner?</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">def</span> <span class="nf">get_merchant</span>
+</span><span class='line'>        <span class="no">Merchant</span><span class="o">.</span><span class="n">find_by</span><span class="p">(</span><span class="ss">subdomain</span><span class="p">:</span> <span class="n">request</span><span class="o">.</span><span class="n">subdomain</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The <strong>authenticate!</strong> method is almost copied from <strong>Devise::Strategies::DatabaseAuthenticatable</strong>, however, after <em>validate(resource)</em> it also calls method <strong>custom_validate</strong>, and in <strong>custom_validate</strong> it will get the merchant from the request&rsquo;s subdomain and test if the resource(which is a user) is the merchant&rsquo;s owner.</p>
+
+<p>PS: It&rsquo;s not a good practice to copy devise souce code here, I will update this blog if I find a better way.</p>
+
+<h2>Register our new strategy</h2>
+
+<p>Now we need to register this new strategy. After we installed the Devise gem, it will create a file <strong>config/initializers/devise.rb</strong>, so let&rsquo;s update this file,</p>
+
+<figure class='code'><figcaption><span>lib/devise/strategies/database_authenticatable_for_merchant_owner.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">warden</span> <span class="k">do</span> <span class="o">|</span><span class="n">manager</span><span class="o">|</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nb">require</span> <span class="s1">&#39;devise/strategies/database_authenticatable_for_merchant_owner&#39;</span>
+</span><span class='line'>  <span class="ss">Warden</span><span class="p">:</span><span class="ss">:Strategies</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="ss">:database_authenticatable_for_merchant_owner</span><span class="p">,</span>
+</span><span class='line'>    <span class="ss">Devise</span><span class="p">:</span><span class="ss">:Strategies</span><span class="o">::</span><span class="no">DatabaseAuthenticatableForMerchantOwner</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">manager</span><span class="o">.</span><span class="n">default_strategies</span><span class="p">(</span><span class="ss">:scope</span> <span class="o">=&gt;</span> <span class="ss">:user</span><span class="p">)</span><span class="o">.</span><span class="n">delete</span> <span class="ss">:database_authenticatable</span>
+</span><span class='line'>  <span class="n">manager</span><span class="o">.</span><span class="n">default_strategies</span><span class="p">(</span><span class="ss">:scope</span> <span class="o">=&gt;</span> <span class="ss">:user</span><span class="p">)</span><span class="o">.</span><span class="n">push</span> <span class="ss">:database_authenticatable_for_merchant_owner</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here we need to require the file explicitly. And then we add the strategy :database_authenticatable_for_merchant_owner.</p>
+
+<p>And in the routes.rb, when we call</p>
+
+<figure class='code'><figcaption><span>config/routes.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">routes</span><span class="o">.</span><span class="n">draw</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">devise_for</span> <span class="ss">:users</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Devise will define a scope <strong>:user</strong> in Warden, and it will add the :database_authenticatable in the default_strategies list. Since we want to use :database_authenticatable_for_merchant_owner strategy, we delete :database_authenticatable and push :database_authenticatable_for_merchant_owner</p>
+
+<p>After this, our application will use :database_authenticatable_for_merchant_owner and support Multitenancy authentication.</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">Andy Wang</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-03-29T21:13:21+10:30" pubdate data-updated="true">Mar 29<span>th</span>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/authentication/'>authentication</a>, <a class='category' href='/blog/categories/devise/'>devise</a>, <a class='category' href='/blog/categories/rails/'>rails</a>, <a class='category' href='/blog/categories/subdomain/'>subdomain</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://climber2002.github.io/blog/2015/03/29/customize-devise-to-support-subdomain-authentication/" data-via="" data-counturl="http://climber2002.github.io/blog/2015/03/29/customize-devise-to-support-subdomain-authentication/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/03/22/digging-rails-how-rails-finds-your-templates-part-3/" title="Previous Post: Digging Rails: How Rails finds your templates Part 3">&laquo; Digging Rails: How Rails finds your templates Part 3</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/03/29/customize-devise-to-support-subdomain-authentication/">Customize Devise to support Multitenancy authentication</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/22/digging-rails-how-rails-finds-your-templates-part-3/">Digging Rails: How Rails finds your templates Part 3</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/26/integrate-web-template-into-rails-4-application/">integrate web template into rails 4 application</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/22/digging-rails-how-rails-finds-your-templates-part-2/">Digging Rails: How Rails finds your templates Part 2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/21/how-rails-finds-your-templates-part-1/">Digging Rails: How Rails finds your templates Part 1</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 - Andy Wang -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a>. Design by <a href="http://octopressthemes.com">Octopress Themes</a>.</span>
+</p>
+
+</footer>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'climber2002';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://climber2002.github.io/blog/2015/03/29/customize-devise-to-support-subdomain-authentication/';
+        var disqus_url = 'http://climber2002.github.io/blog/2015/03/29/customize-devise-to-support-subdomain-authentication/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
