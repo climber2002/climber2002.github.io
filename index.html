@@ -9,7 +9,7 @@
   <meta name="author" content="Andy Wang">
 
   
-  <meta name="description" content="Last year I read the book Multitenancy with Rails written by Ryan Bigg. In the book when he implements the authentication for the multi-tenancy, he &hellip;">
+  <meta name="description" content="Before I worked in a large company which has its own DBAs. Yes I know SQL,I know Stored Procedures and I think I know something about indexes, but &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,48 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/03/30/book-review-sql-performance-explained-everything-developers-need-to-know-about-sql-performance/">Book Review: SQL Performance Explained Everything Developers Need to Know About SQL Performance</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-03-30T21:22:56+10:30" pubdate data-updated="true">Mar 30<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/03/30/book-review-sql-performance-explained-everything-developers-need-to-know-about-sql-performance/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><img class="left" src="/images/SQL_Performance_Explained.jpg" width="300" height="500"></p>
+
+<p>Before I worked in a large company which has its own DBAs. Yes I know SQL,I know Stored Procedures and I think I know something about indexes, but for database performance tuning, we always delegate the task to the DBA. And currently I work in a small company which doesn&rsquo;t have a specific DBA role, so developers have to be DBA (Full Stack right?). So for learning something about database performance tuning, I bought this book. Oh I really love it and I learned so many things in one week!</p>
+
+<p>This book talks about indexes and only one type of indexes: B-Tree. It firstly starts with the basics of index and the WHERE clause. And then proceed to join, clustering, sorting and grouping, and also partial results and modifying data. After reading this book, you should have a firm understanding how indexes work and I&rsquo;m sure that this is needed for every Rails developer. As I totally agree the author&rsquo;s claim, that SQL performance tuning is not just a DBA task but a developer&rsquo;s task, as the performance is related to business logic and only developers understand that. And also we should think performance from design, and it&rsquo;s not an afterthought.</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -3934,170 +3976,6 @@ errors # provides access to an errors object. Here you can put in errors relatin
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize/">Capybara Integration Tests With JQuery Selectize</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-09-22T22:30:13+09:30" pubdate data-updated="true">Sep 22<span>nd</span>, 2014</time>
-        
-         | <a href="/blog/2014/09/22/capybara-integration-tests-with-jquery-selectize/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Recently in one of my projects I utilized a popular JQuery plugin called <a href="http://brianreavis.github.io/selectize.js/">Selectize</a>. And I need to do Integration tests by using Capybara. Here is how to simulate some general events of Selectize.</p>
-
-<p>Firstly I use poltergeist Javascript driver, so in my <strong>rails_helper.rb</strong> it has following configurations,</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="no">Capybara</span><span class="o">.</span><span class="n">javascript_driver</span> <span class="o">=</span> <span class="ss">:poltergeist</span>
-</span><span class='line'>
-</span><span class='line'><span class="no">Capybara</span><span class="o">.</span><span class="n">configure</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
-</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">match</span> <span class="o">=</span> <span class="ss">:prefer_exact</span>
-</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">ignore_hidden_elements</span> <span class="o">=</span> <span class="kp">false</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><img src="/images/selectize.png"></p>
-
-<p>When a input box is selectized like the figure above, we can check it generates following DOM structure in our HTML,</p>
-
-<p> <img src="/images/selectize_code.png"></p>
-
-<p> The input &lsquo;#properties-input&rsquo; is our original input, it&rsquo;s set &lsquo;display: none&rsquo; css property, and Selectize replaces it with another input, and the &lsquo;div.item&rsquo; contains the items that we already selected, the &lsquo;div.selectize-dropdown&rsquo; is shown as a dropdown when we click the input and lets us to choose another item.</p>
-
-<p> So if we needs to select an item, we could do like this,</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">within</span><span class="p">(</span><span class="ss">:xpath</span><span class="p">,</span> <span class="s2">&quot;//input[@id=&#39;properties-input&#39;]/..&quot;</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">first</span><span class="p">(</span><span class="s1">&#39;div.selectize-input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span>
-</span><span class='line'>  <span class="n">find</span><span class="p">(</span><span class="s1">&#39;div.option&#39;</span><span class="p">,</span> <span class="ss">:text</span> <span class="o">=&gt;</span> <span class="s1">&#39;Screen Size&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Here I use a xpath to find the parent of the input box that we selectized, and then within this parent we click the &lsquo;div.selectize-input&rsquo;, and the dropdown will show and we run <code>find('div.option', :text =&gt; 'Screen Size').click</code> to click the item that contains the text &lsquo;Screen Size&rsquo;.</p>
-
-<p>Selectize also provides Ajax support, when you type something in the input, it could send Ajax requests to server to populate the items. So here we simulate the input,</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">within</span><span class="p">(</span><span class="ss">:xpath</span><span class="p">,</span> <span class="s2">&quot;//input[@id=&#39;properties-input&#39;]/..&quot;</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>  <span class="n">first</span><span class="p">(</span><span class="s1">&#39;div.selectize-input input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;u&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>This is to simulate input a &lsquo;u&rsquo; character in the input, and if you configure the <strong>load</strong> option, it will send a Ajax request to the server to populate the items.</p>
-
-<p>I&rsquo;ve created a <strong>SelectizeHelpers</strong> class to simulate some common events,</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">SelectizeHelpers</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">selectize_click</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">selectize_within</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>      <span class="n">first</span><span class="p">(</span><span class="s1">&#39;div.selectize-input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">select_option</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">selectize_within</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>      <span class="n">first</span><span class="p">(</span><span class="s1">&#39;div.selectize-input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">click</span>
-</span><span class='line'>      <span class="n">find</span><span class="p">(</span><span class="s1">&#39;div.option&#39;</span><span class="p">,</span> <span class="ss">:text</span> <span class="o">=&gt;</span> <span class="n">text</span><span class="p">)</span><span class="o">.</span><span class="n">click</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">set_text</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">selectize_within</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>      <span class="n">first</span><span class="p">(</span><span class="s1">&#39;div.selectize-input input&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">selectize_within</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
-</span><span class='line'>    <span class="n">within</span><span class="p">(</span><span class="ss">:xpath</span><span class="p">,</span> <span class="s2">&quot;//input[@id=&#39;</span><span class="si">#{</span><span class="nb">id</span><span class="si">}</span><span class="s2">&#39;]/..&quot;</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>      <span class="k">yield</span> <span class="k">if</span> <span class="nb">block_given?</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="no">RSpec</span><span class="o">.</span><span class="n">configure</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
-</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">include</span> <span class="no">SelectizeHelpers</span><span class="p">,</span> <span class="ss">:type</span> <span class="o">=&gt;</span> <span class="ss">:feature</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>The <code>selectize_click(id)</code> is to click the selectize input, the <code>select_option</code> is to select an option whose text matches the <strong>text</strong>. And <code>set_text</code> is to set some text in the input.</p>
-
-<p>For the methods above, the <strong>id</strong> we should pass the id of the input that we apply the selectize.</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -4113,6 +3991,10 @@ errors # provides access to an errors object. Here you can put in errors relatin
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/03/30/book-review-sql-performance-explained-everything-developers-need-to-know-about-sql-performance/">Book Review: SQL Performance Explained Everything Developers Need to Know about SQL Performance</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/03/29/customize-devise-to-support-subdomain-authentication/">Customize Devise to support Multitenancy authentication</a>
       </li>
     
@@ -4126,10 +4008,6 @@ errors # provides access to an errors object. Here you can put in errors relatin
     
       <li class="post">
         <a href="/blog/2015/02/22/digging-rails-how-rails-finds-your-templates-part-2/">Digging Rails: How Rails finds your templates Part 2</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/02/21/how-rails-finds-your-templates-part-1/">Digging Rails: How Rails finds your templates Part 1</a>
       </li>
     
   </ul>
