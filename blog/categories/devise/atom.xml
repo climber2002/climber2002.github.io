@@ -4,7 +4,7 @@
   <title><![CDATA[Category: devise | AprilTouch]]></title>
   <link href="http://climber2002.github.io/blog/categories/devise/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2015-03-29T22:37:43+10:30</updated>
+  <updated>2015-03-30T21:16:19+10:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -175,6 +175,8 @@
 
 <p>Warden is a <a href="http://rack.github.io/">Rack</a> middleware which provides authentication for web applications. You can register <em>Strategies</em> in Warden to define how to authenticate a user.</p>
 
+<h3>Strategies</h3>
+
 <p>For example, the following is to add a <strong>:password</strong> strategy in Warden</p>
 
 <p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
@@ -248,6 +250,12 @@ There’s a couple of misc things to do too:</li>
 errors # provides access to an errors object. Here you can put in errors relating to authentication</p>
 
 <p>For more information check <a href="https://github.com/hassox/warden/wiki/Strategies">the Warden documents</a>.</p>
+
+<h3>Scope</h3>
+
+<p>After configuring Strategies in Warden, you can set the strategies to scopes. Warden can use different strategies on different scopes, and the scopes are independent and not interfere each other. For example, you can configure two scopes :user and :admin, some resources are protected in :user scope and other advanced resources are protected in :admin scope. If you authenticated :user scope, it still needs authentication for :admin scope for advanced resources. For more details check <a href="https://github.com/hassox/warden/wiki/Scopes">Warden Wiki</a></p>
+
+<h3>Devise</h3>
 
 <p>Devise depends on Warden, and it registers a Strategy <strong>database_authenticatable</strong> by default,</p>
 
