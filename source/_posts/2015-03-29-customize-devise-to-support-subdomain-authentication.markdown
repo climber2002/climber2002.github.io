@@ -81,6 +81,8 @@ So only when the request has a subdomain and the subdomain is not *www*, then it
 ## Warden and Devise
 Warden is a [Rack](http://rack.github.io/) middleware which provides authentication for web applications. You can register *Strategies* in Warden to define how to authenticate a user.
 
+### Strategies
+
 For example, the following is to add a **:password** strategy in Warden
 
 {% codeblock lang:ruby %}
@@ -125,6 +127,10 @@ errors # provides access to an errors object. Here you can put in errors relatin
 
 For more information check [the Warden documents](https://github.com/hassox/warden/wiki/Strategies). 
 
+### Scope
+After configuring Strategies in Warden, you can set the strategies to scopes. Warden can use different strategies on different scopes, and the scopes are independent and not interfere each other. For example, you can configure two scopes :user and :admin, some resources are protected in :user scope and other advanced resources are protected in :admin scope. If you authenticated :user scope, it still needs authentication for :admin scope for advanced resources. For more details check [Warden Wiki](https://github.com/hassox/warden/wiki/Scopes) 
+
+### Devise
 Devise depends on Warden, and it registers a Strategy **database_authenticatable** by default, 
 
 {% codeblock lang:ruby devise/lib/devise/strategies/database_authenticatable.rb %}
