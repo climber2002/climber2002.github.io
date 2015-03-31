@@ -6,6 +6,8 @@ comments: true
 categories: rails devise subdomain multitenancy authentication
 ---
 
+PS: There are simpler solutions for Devise multitenancy authentication, such as [RailsCasts](http://railscasts.com/episodes/388-multitenancy-with-scopes) and [this blog](http://www.sitepoint.com/basecamp-like-subdomains-with-devise/), but customizing Devise gave me an excuse to explore the source code of Warden and Devise though :).
+
 Last year I read the book [Multitenancy with Rails](https://leanpub.com/multi-tenancy-rails) written by Ryan Bigg. In the book when he implements the authentication for the multi-tenancy, he uses [Warden](https://github.com/hassox/warden) instead of Devise, cause using Devise will need a lot of customization. And Recently I need to implement this multi-tenancy authentication for a Rails application, and I want to use Devise, so I checked the source code of Warden and Devise and found a way to customize Devise to do it.
 
 In my application, I have two models, **Merchant** and **User**, one user can be the owner of one or more merchant, so they are a has_and_belongs_to_many relationship.
