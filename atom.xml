@@ -4,7 +4,7 @@
   <title><![CDATA[AprilTouch]]></title>
   <link href="http://climber2002.github.io/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2015-03-30T21:46:43+10:30</updated>
+  <updated>2015-03-31T20:48:37+10:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -31,7 +31,9 @@
     <link href="http://climber2002.github.io/blog/2015/03/29/customize-devise-to-support-subdomain-authentication/"/>
     <updated>2015-03-29T21:13:21+10:30</updated>
     <id>http://climber2002.github.io/blog/2015/03/29/customize-devise-to-support-subdomain-authentication</id>
-    <content type="html"><![CDATA[<p>Last year I read the book <a href="https://leanpub.com/multi-tenancy-rails">Multitenancy with Rails</a> written by Ryan Bigg. In the book when he implements the authentication for the multi-tenancy, he uses <a href="https://github.com/hassox/warden">Warden</a> instead of Devise, cause using Devise will need a lot of customization. And Recently I need to implement this multi-tenancy authentication for a Rails application, and I want to use Devise, so I checked the source code of Warden and Devise and found a way to customize Devise to do it.</p>
+    <content type="html"><![CDATA[<p>PS: There are simpler solutions for Devise multitenancy authentication, such as <a href="http://railscasts.com/episodes/388-multitenancy-with-scopes">RailsCasts</a> and <a href="http://www.sitepoint.com/basecamp-like-subdomains-with-devise/">this blog</a>, but customizing Devise gave me an excuse to explore the source code of Warden and Devise though :).</p>
+
+<p>Last year I read the book <a href="https://leanpub.com/multi-tenancy-rails">Multitenancy with Rails</a> written by Ryan Bigg. In the book when he implements the authentication for the multi-tenancy, he uses <a href="https://github.com/hassox/warden">Warden</a> instead of Devise, cause using Devise will need a lot of customization. And Recently I need to implement this multi-tenancy authentication for a Rails application, and I want to use Devise, so I checked the source code of Warden and Devise and found a way to customize Devise to do it.</p>
 
 <p>In my application, I have two models, <strong>Merchant</strong> and <strong>User</strong>, one user can be the owner of one or more merchant, so they are a has_and_belongs_to_many relationship.</p>
 
