@@ -4,7 +4,7 @@
   <title><![CDATA[Category: templates | AprilTouch]]></title>
   <link href="http://climber2002.github.io/blog/categories/templates/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2015-03-31T20:48:37+10:30</updated>
+  <updated>2015-04-06T21:13:26+09:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -12,6 +12,613 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Digging Rails: How Rails finds your templates Part 4]]></title>
+    <link href="http://climber2002.github.io/blog/2015/04/06/digging-rails-how-rails-finds-your-templates-part-4/"/>
+    <updated>2015-04-06T19:08:37+09:30</updated>
+    <id>http://climber2002.github.io/blog/2015/04/06/digging-rails-how-rails-finds-your-templates-part-4</id>
+    <content type="html"><![CDATA[<p>In this part we will continue our exploration of how Rails finds your templates. If you need a refresh, here is <a href="http://climber2002.github.io/blog/2015/02/21/how-rails-finds-your-templates-part-1/">Part1</a>, <a href="http://climber2002.github.io/blog/2015/02/22/digging-rails-how-rails-finds-your-templates-part-2/">Part 2</a> and <a href="http://climber2002.github.io/blog/2015/03/22/digging-rails-how-rails-finds-your-templates-part-3/">Part 3</a>.</p>
+
+<p>In <a href="http://climber2002.github.io/blog/2015/03/22/digging-rails-how-rails-finds-your-templates-part-3/">last part</a> we saw that <strong>ActionView::LookupContext#find_template</strong> is just a delegation to <strong>ActionView::PathSet#find</strong>. So let&rsquo;s check what <strong>ActionView::PathSet#find</strong> is doing.</p>
+
+<h2>ActionView::PathSet</h2>
+
+<p>From the class name of <strong>PathSet</strong> we can get an idea that this class is to manage a set of pathes, where the templates are stored. Let&rsquo;s have a look at the definition of this class.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/actionview/lib/action_view/path_set.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module ActionView #:nodoc:</span>
+</span><span class='line'><span class="sr">  # = Action View PathSet</span>
+</span><span class='line'><span class="sr">  #</span>
+</span><span class='line'><span class="sr">  # This class is used to store and access paths in Action View. A number of</span>
+</span><span class='line'><span class="sr">  # operations are defined so that you can search among the paths in this</span>
+</span><span class='line'><span class="sr">  # set and also perform operations on other +PathSet+ objects.</span>
+</span><span class='line'><span class="sr">  #</span>
+</span><span class='line'><span class="sr">  # A +LookupContext+ will use a +PathSet+ to store the paths in its context.</span>
+</span><span class='line'><span class="sr">  class PathSet #:nodoc:&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kp">include</span> <span class="no">Enumerable</span>
+</span><span class='line'>
+</span><span class='line'><span class="kp">attr_reader</span> <span class="ss">:paths</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">delegate</span> <span class="ss">:[]</span><span class="p">,</span> <span class="ss">:include?</span><span class="p">,</span> <span class="ss">:pop</span><span class="p">,</span> <span class="ss">:size</span><span class="p">,</span> <span class="ss">:each</span><span class="p">,</span> <span class="ss">to</span><span class="p">:</span> <span class="ss">:paths</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">paths</span> <span class="o">=</span> <span class="o">[]</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@paths</span> <span class="o">=</span> <span class="n">typecast</span> <span class="n">paths</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">find_all</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">first</span> <span class="o">||</span> <span class="k">raise</span><span class="p">(</span><span class="no">MissingTemplate</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">))</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">find_all</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">prefixes</span> <span class="o">=</span> <span class="o">[]</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">prefixes</span> <span class="o">=</span> <span class="o">[</span><span class="n">prefixes</span><span class="o">]</span> <span class="k">if</span> <span class="nb">String</span> <span class="o">===</span> <span class="n">prefixes</span>
+</span><span class='line'>  <span class="n">prefixes</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">prefix</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">paths</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">resolver</span><span class="o">|</span>
+</span><span class='line'>      <span class="n">templates</span> <span class="o">=</span> <span class="n">resolver</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">templates</span> <span class="k">unless</span> <span class="n">templates</span><span class="o">.</span><span class="n">empty?</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="o">[]</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">exists?</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">prefixes</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">find_all</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">prefixes</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">)</span><span class="o">.</span><span class="n">any?</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">typecast</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">paths</span><span class="o">.</span><span class="n">map</span> <span class="k">do</span> <span class="o">|</span><span class="n">path</span><span class="o">|</span>
+</span><span class='line'>    <span class="k">case</span> <span class="n">path</span>
+</span><span class='line'>    <span class="k">when</span> <span class="no">Pathname</span><span class="p">,</span> <span class="nb">String</span>
+</span><span class='line'>      <span class="no">OptimizedFileSystemResolver</span><span class="o">.</span><span class="n">new</span> <span class="n">path</span><span class="o">.</span><span class="n">to_s</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="n">path</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<ul>
+<li>We can see that the <strong>initialize</strong> method accepts a <em>paths</em> param, which is normally an array of strings. And in <strong>initialize</strong> method, it will call the typecast the <em>paths</em> and then store the typecasted value in <em>@paths</em> instance variable</li>
+<li>for each element in the <em>paths</em>, the <strong>typecast</strong> method will convert it to an <strong>OptimizedFileSystemResolver</strong> instance.</li>
+<li>The <strong>find_all</strong> method will interate each resolver instance in <em>paths</em> and return the first value which is not empty</li>
+<li>The <strong>find</strong> method just delegates to <strong>find_all</strong> method, if it can&rsquo;t find a template, it will raise <em>MissingTemplate</em> exception.</li>
+</ul>
+
+
+<p>In <strong>LookupContext</strong> class, we can see how the <strong>ActionView::PathSet</strong> instance is created.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/actionview/lib/action_view/lookup_context.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module ActionView</span>
+</span><span class='line'><span class="sr">  class LookupContext&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1"># Helpers related to template lookup using the lookup context information.</span>
+</span><span class='line'><span class="k">module</span> <span class="nn">ViewPaths</span>
+</span><span class='line'>  <span class="kp">attr_reader</span> <span class="ss">:view_paths</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># Whenever setting view paths, makes a copy so that we can manipulate them in</span>
+</span><span class='line'>  <span class="c1"># instance objects as we wish.</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">view_paths</span><span class="o">=</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+</span><span class='line'>    <span class="vi">@view_paths</span> <span class="o">=</span> <span class="ss">ActionView</span><span class="p">:</span><span class="ss">:PathSet</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">Array</span><span class="p">(</span><span class="n">paths</span><span class="p">))</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="kp">include</span> <span class="no">ViewPaths</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The <strong>view_paths=</strong> method is defind in module <strong>ActionView::LookupContext::ViewPaths</strong> and <strong>ActionView::LookupContext</strong> includes this module. We can see that the when calling <strong>view_paths=</strong> method, an instance of <strong>ActionView::PathSet</strong> will be created and set to the <strong>@view_paths</strong> instance variable of <strong>ActionView::LookupContext</strong>.</p>
+
+<p>So how this <strong>view_paths=</strong> method is called? It&rsquo;s in <strong>ActionView::LookupContext#initialize</strong> method.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/actionview/lib/action_view/lookup_context.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module ActionView</span>
+</span><span class='line'><span class="sr">  class LookupContext&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">view_paths</span><span class="p">,</span> <span class="n">details</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">prefixes</span> <span class="o">=</span> <span class="o">[]</span><span class="p">)</span>
+</span><span class='line'>  <span class="vi">@details</span><span class="p">,</span> <span class="vi">@details_key</span> <span class="o">=</span> <span class="p">{},</span> <span class="kp">nil</span>
+</span><span class='line'>  <span class="vi">@skip_default_locale</span> <span class="o">=</span> <span class="kp">false</span>
+</span><span class='line'>  <span class="vi">@cache</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class='line'>  <span class="vi">@prefixes</span> <span class="o">=</span> <span class="n">prefixes</span>
+</span><span class='line'>  <span class="vi">@rendered_format</span> <span class="o">=</span> <span class="kp">nil</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nb">self</span><span class="o">.</span><span class="n">view_paths</span> <span class="o">=</span> <span class="n">view_paths</span>
+</span><span class='line'>  <span class="n">initialize_details</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>So the <strong>view_paths</strong> is passed to <strong>ActionView::LookupContext</strong> instances in <strong>initialize</strong>. And in <strong>ActionView::ViewPaths</strong> it initializes <strong>ActionView::LookupContext</strong>.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/actionview/lib/action_view/view_paths.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module ActionView</span>
+</span><span class='line'><span class="sr">  module ViewPaths&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="kp">extend</span> <span class="ss">ActiveSupport</span><span class="p">:</span><span class="ss">:Concern</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">included</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">class_attribute</span> <span class="ss">:_view_paths</span>
+</span><span class='line'>  <span class="nb">self</span><span class="o">.</span><span class="n">_view_paths</span> <span class="o">=</span> <span class="ss">ActionView</span><span class="p">:</span><span class="ss">:PathSet</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>  <span class="nb">self</span><span class="o">.</span><span class="n">_view_paths</span><span class="o">.</span><span class="n">freeze</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># LookupContext is the object responsible to hold all information required to lookup</span>
+</span><span class='line'><span class="c1"># templates, i.e. view paths and details. Check ActionView::LookupContext for more</span>
+</span><span class='line'><span class="c1"># information.</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">lookup_context</span>
+</span><span class='line'>  <span class="vi">@_lookup_context</span> <span class="o">||=</span>
+</span><span class='line'>    <span class="ss">ActionView</span><span class="p">:</span><span class="ss">:LookupContext</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">self</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">_view_paths</span><span class="p">,</span> <span class="n">details_for_lookup</span><span class="p">,</span> <span class="n">_prefixes</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">append_view_path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">lookup_context</span><span class="o">.</span><span class="n">view_paths</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="o">*</span><span class="n">path</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">prepend_view_path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">lookup_context</span><span class="o">.</span><span class="n">view_paths</span><span class="o">.</span><span class="n">unshift</span><span class="p">(</span><span class="o">*</span><span class="n">path</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">ClassMethods</span>
+</span><span class='line'>  <span class="c1"># Append a path to the list of view paths for this controller.</span>
+</span><span class='line'>  <span class="c1">#</span>
+</span><span class='line'>  <span class="c1"># ==== Parameters</span>
+</span><span class='line'>  <span class="c1"># * &amp;lt;tt&amp;gt;path&amp;lt;/tt&amp;gt; - If a String is provided, it gets converted into</span>
+</span><span class='line'>  <span class="c1">#   the default view path. You may also provide a custom view path</span>
+</span><span class='line'>  <span class="c1">#   (see ActionView::PathSet for more information)</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">append_view_path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">_view_paths</span> <span class="o">=</span> <span class="n">view_paths</span> <span class="o">+</span> <span class="nb">Array</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># Prepend a path to the list of view paths for this controller.</span>
+</span><span class='line'>  <span class="c1">#</span>
+</span><span class='line'>  <span class="c1"># ==== Parameters</span>
+</span><span class='line'>  <span class="c1"># * &amp;lt;tt&amp;gt;path&amp;lt;/tt&amp;gt; - If a String is provided, it gets converted into</span>
+</span><span class='line'>  <span class="c1">#   the default view path. You may also provide a custom view path</span>
+</span><span class='line'>  <span class="c1">#   (see ActionView::PathSet for more information)</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">prepend_view_path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">self</span><span class="o">.</span><span class="n">_view_paths</span> <span class="o">=</span> <span class="ss">ActionView</span><span class="p">:</span><span class="ss">:PathSet</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="nb">Array</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">+</span> <span class="n">view_paths</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># A list of all of the default view paths for this controller.</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">view_paths</span>
+</span><span class='line'>    <span class="n">_view_paths</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>This <strong>ActionView::ViewPaths</strong> will be included in a controller class. We can see that by default the <em>view_paths</em> is an empty array. But it provides <em>append_view_path</em> and <em>prepend_view_path</em> to add a view path at the end or the front of view paths. Notice that the <strong>prepend_view_path</strong> and <strong>append_view_path</strong> are defined both as class methods and instance methods.</p>
+
+<p>So how the view path is initialized? Actually it&rsquo;s in <strong>Rails::Engine</strong> class.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/railties/lib/rails/engine.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module Rails&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">class</span> <span class="nc">Engine</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;initializer :add_view_paths do</span>
+</span><span class='line'><span class="sr">  views = paths[&quot;app/</span><span class="n">views</span><span class="s2">&quot;].existent</span>
+</span><span class='line'><span class="s2">  unless views.empty?</span>
+</span><span class='line'><span class="s2">    ActiveSupport.on_load(:action_controller){ prepend_view_path(views) if respond_to?(:prepend_view_path) }</span>
+</span><span class='line'><span class="s2">    ActiveSupport.on_load(:action_mailer){ prepend_view_path(views) }</span>
+</span><span class='line'><span class="s2">  end</span>
+</span><span class='line'><span class="s2">end</span>
+</span><span class='line'><span class="s2">&lt;/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;p&gt;  end&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;p&gt;end&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>a initializer defines a code block which will be called during application startup. So when load :action_controller it will call <strong>prepend_view_path</strong> and the view_paths contains only one element, which is the <strong>app/views</strong> folder in your rails application.</p>
+
+<h1>OptimizedFileSystemResolver</h1>
+
+<p><img class="left" src="/images/resolver.png" width="300" height="500"></p>
+
+<p>Now understand how <strong>ActionView::PathSet</strong> is initialized, and we also know that in <em>find</em> method it actually delegates to the resolver. So let&rsquo;s see how the resolver implements the method.</p>
+
+<p>The Resolver is to resolve a template when passing the details. The class relationship is as the above diagram,</p>
+
+<p>We can see that by default the resolver used in <strong>ActionView::PathSet</strong>, which is <strong>ActionView::OptimizedFileSystemResolver</strong>, extends from <strong>ActionView::FileSystemResolver</strong>, which in terms extends from <strong>ActionView::PathResolver</strong>, which extends from <strong>ActionView::Resolver</strong>, which is the base class for all resolvers.</p>
+
+<p>The base class <strong>ActionView::Resolver</strong> provides some common functionalities such as caching for all sub-class resolvers. However here I will focus on <strong>ActionView::PathResolver</strong>, which implements the logic how to find a template in a path.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><figcaption><span>rails/actionview/lib/action_view/template/resolver.rb </span></figcaption>
+<div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module ActionView&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">class</span> <span class="nc">PathResolver</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="no">Resolver</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;EXTENSIONS = { :locale =&amp;gt; &quot;.&quot;, :formats =&amp;gt; &quot;.&quot;, :variants =&amp;gt; &quot;+&quot;, :handlers =&amp;gt; &quot;.&quot; }</span>
+</span><span class='line'><span class="sr">DEFAULT_PATTERN = &quot;:prefix/</span><span class="ss">:action</span><span class="p">{</span><span class="o">.</span><span class="ss">:locale</span><span class="p">,}{</span><span class="o">.</span><span class="ss">:formats</span><span class="p">,}{</span><span class="o">+</span><span class="ss">:variants</span><span class="p">,}{</span><span class="o">.</span><span class="ss">:handlers</span><span class="p">,}</span><span class="s2">&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">def initialize(pattern=nil)</span>
+</span><span class='line'><span class="s2">  @pattern = pattern || DEFAULT_PATTERN</span>
+</span><span class='line'><span class="s2">  super()</span>
+</span><span class='line'><span class="s2">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">private</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">def find_templates(name, prefix, partial, details)</span>
+</span><span class='line'><span class="s2">  path = Path.build(name, prefix, partial)</span>
+</span><span class='line'><span class="s2">  query(path, details, details[:formats])</span>
+</span><span class='line'><span class="s2">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">def query(path, details, formats)</span>
+</span><span class='line'><span class="s2">  query = build_query(path, details)</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">  template_paths = find_template_paths query</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">  template_paths.map { |template|</span>
+</span><span class='line'><span class="s2">    handler, format, variant = extract_handler_and_format_and_variant(template, formats)</span>
+</span><span class='line'><span class="s2">    contents = File.binread(template)</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">    Template.new(contents, File.expand_path(template), handler,</span>
+</span><span class='line'><span class="s2">      :virtual_path =&amp;gt; path.virtual,</span>
+</span><span class='line'><span class="s2">      :format       =&amp;gt; format,</span>
+</span><span class='line'><span class="s2">      :variant      =&amp;gt; variant,</span>
+</span><span class='line'><span class="s2">      :updated_at   =&amp;gt; mtime(template)</span>
+</span><span class='line'><span class="s2">    )</span>
+</span><span class='line'><span class="s2">  }</span>
+</span><span class='line'><span class="s2">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">def find_template_paths(query)</span>
+</span><span class='line'><span class="s2">  Dir[query].reject { |filename|</span>
+</span><span class='line'><span class="s2">    File.directory?(filename) ||</span>
+</span><span class='line'><span class="s2">      # deals with case-insensitive file systems.</span>
+</span><span class='line'><span class="s2">      !File.fnmatch(query, filename, File::FNM_EXTGLOB)</span>
+</span><span class='line'><span class="s2">  }</span>
+</span><span class='line'><span class="s2">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2"># Helper for building query glob string based on resolver&#39;s pattern.</span>
+</span><span class='line'><span class="s2">def build_query(path, details)</span>
+</span><span class='line'><span class="s2">  query = @pattern.dup</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">  prefix = path.prefix.empty? ? &quot;&quot; : &quot;</span><span class="c1">#{escape_entry(path.prefix)}\\1&quot;</span>
+</span><span class='line'>  <span class="n">query</span><span class="o">.</span><span class="n">gsub!</span><span class="p">(</span><span class="sr">/\:prefix(\/)?/</span><span class="p">,</span> <span class="n">prefix</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">partial</span> <span class="o">=</span> <span class="n">escape_entry</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">partial?</span> <span class="p">?</span> <span class="s2">&quot;_</span><span class="si">#{</span><span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="p">:</span> <span class="n">path</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">query</span><span class="o">.</span><span class="n">gsub!</span><span class="p">(</span><span class="sr">/\:action/</span><span class="p">,</span> <span class="n">partial</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">details</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">ext</span><span class="p">,</span> <span class="n">variants</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">query</span><span class="o">.</span><span class="n">gsub!</span><span class="p">(</span><span class="sr">/\:</span><span class="si">#{</span><span class="n">ext</span><span class="si">}</span><span class="sr">/</span><span class="p">,</span> <span class="s2">&quot;{</span><span class="si">#{</span><span class="n">variants</span><span class="o">.</span><span class="n">compact</span><span class="o">.</span><span class="n">uniq</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">}&quot;</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="vi">@path</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">escape_entry</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">entry</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="sr">/[*?{}\[\]]/</span><span class="p">,</span> <span class="s1">&#39;\\\\\\&amp;amp;&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The most important methods are <strong>build_query</strong> and <strong>find_template_paths</strong>.</p>
+
+<ul>
+<li>The <strong>PathResolver</strong> will use a pattern to search templates in path, and by default the pattern is DEFAULT_PATTERN</li>
+<li><strong>build_query</strong>: This method is to build a query from the path and details. Remember in <a href="http://climber2002.github.io/blog/2015/03/22/digging-rails-how-rails-finds-your-templates-part-3/">last part</a>, <strong>ActionView::AbstractRenderer#extract_details</strong> will extract details from options. For example, for an index action in Articles controller, the query will be</li>
+</ul>
+
+
+<p><strong>articles/index{.en,}{.html,}{+:variants,}{.haml,}</strong></p>
+
+<p>For this query, in <strong>find_template_paths</strong> it will call <strong>Dir[query]</strong>, which is actually an alias to glob which is to expand the query. For example, for the above query, {p, q} matchs either p, or q. So for example for <em>{.en,}</em> it could either match .en or an empty string. So if we define a template <strong>articles/index.html.haml</strong>, it will match the query. For more information, consult <a href="http://ruby-doc.org/core-2.2.0/Dir.html#method-c-glob">Ruby doc</a>.</p>
+
+<p>So for each matched template, in <strong>query</strong> method it will create a <strong>Template</strong> to wrap the template file.</p>
+
+<h2>Summary</h2>
+
+<p>So in summary here we can see that the flow for Rails to find a template is as following,</p>
+
+<ol>
+<li>Rails initializes a set of Paths for resolve templates, by default it contains only one path <em>app/views</em></li>
+<li>When an action of a controller is accessed, the render will be called either explicitly or implicitly.</li>
+<li>Rails will extract the prefixes, action and some details from the options passed to <em>render</em>,</li>
+<li>Rails find the template by search in the path set using a query composed from prefixes, action and details.</li>
+</ol>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Digging Rails: How Rails finds your templates Part 3]]></title>

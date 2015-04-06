@@ -9,7 +9,7 @@
   <meta name="author" content="Andy Wang">
 
   
-  <meta name="description" content="Recently in one of my projects I utilized a popular JQuery plugin called Selectize. And I need to do Integration tests by using Capybara. Here is how &hellip;">
+  <meta name="description" content="PostgreSQL is a very popular database in Rails world. Here I describe how to install and configure it on Ubuntu 14.04 server. Install Using apt-get &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -77,6 +77,141 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/">Configure Customized Data Directory for Postgresql on Ubuntu 14.04</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-02-07T20:01:19+10:30" pubdate data-updated="true">Feb 7<span>th</span>, 2015</time>
+        
+         | <a href="/blog/2015/02/07/install-and-configure-postgresql-on-ubuntu-14-dot-04/#disqus_thread">Comments</a>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><strong>PostgreSQL</strong> is a very popular database in Rails world. Here I describe how to install and configure it on Ubuntu 14.04 server.</p>
+
+<h2>Install</h2>
+
+<p>Using apt-get to install PostgreSQL is very simple. Just execute the following two commands,</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo apt-get update
+</span><span class='line'>sudo apt-get install postgresql postgresql-contrib
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Here on my server it will install PostgreSQL 9.3.</p>
+
+<p>During the installation a user named &lsquo;postgres&rsquo; will be created automatically and this user is used to start postgresql.</p>
+
+<p>So we should change the password of user &lsquo;postgres&rsquo;.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>sudo passwd postgres
+</span><span class='line'>Enter new UNIX password:
+</span><span class='line'>Retype new UNIX password:
+</span><span class='line'>passwd: password updated successfully
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>The installation will put configuration files in <strong>/etc/postgresql/9.3/main</strong> by default.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>vagrant@vagrant-ubuntu-trusty-64:/etc/postgresql/9.3/main<span class="nv">$ </span>ls -la
+</span><span class='line'>total 56
+</span><span class='line'>drwxr-xr-x 2 postgres postgres  4096 Feb  7 09:26 .
+</span><span class='line'>drwxr-xr-x 3 postgres postgres  4096 Feb  7 09:26 ..
+</span><span class='line'>-rw-r--r-- 1 postgres postgres   315 Feb  7 09:26 environment
+</span><span class='line'>-rw-r--r-- 1 postgres postgres   143 Feb  7 09:26 pg_ctl.conf
+</span><span class='line'>-rw-r----- 1 postgres postgres  4649 Feb  7 09:26 pg_hba.conf
+</span><span class='line'>-rw-r----- 1 postgres postgres  1636 Feb  7 09:26 pg_ident.conf
+</span><span class='line'>-rw-r--r-- 1 postgres postgres 20687 Feb  7 09:26 postgresql.conf
+</span><span class='line'>-rw-r--r-- 1 postgres postgres   378 Feb  7 09:26 start.conf
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Configure new data directory</h2>
+
+<p>Sometimes to improve performance, we want put postgres data files in its own disk. For example, we may mount a disk in folder <strong>/database</strong> and we want to put all postgres data file there. So let&rsquo;s do that.</p>
+
+<p>Suppose the <strong>/database</strong> folder already exists. We need to change its owner to postgres firstly.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo chown -R postgres:postgres /database
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we need to initialize this folder as a data folder</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>su postgres
+</span><span class='line'><span class="nv">$ </span>/usr/lib/postgresql/9.3/bin/initdb -D /database
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>We must su as postgres first since this user also owns the server process.</p>
+
+<p>Now let&rsquo;s stop server by running <strong>sudo service postgresql stop</strong>.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo service postgresql stop
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Now we need to update the file <strong>/etc/postgresql/9.3/main/postgresql.conf</strong>,</p>
+
+<p>change <strong>data_directory = &lsquo;/var/lib/postgresql/9.3/main&rsquo;</strong> to <strong>data_directory = &lsquo;/database&rsquo;</strong></p>
+
+<p>PS: You need to stop the server first before updating the data_directory location. Otherwise the stop will fail and you need to kill the process manually.</p>
+
+<p>After update the configuration file we need to restart postgresql server.</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo service postgresql start
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2549,6 +2684,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/04/06/digging-rails-how-rails-finds-your-templates-part-4/">Digging Rails: How Rails finds your templates Part 4</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/03/30/book-review-sql-performance-explained-everything-developers-need-to-know-about-sql-performance/">Book Review: SQL Performance Explained Everything Developers Need to Know about SQL Performance</a>
       </li>
     
@@ -2562,10 +2701,6 @@
     
       <li class="post">
         <a href="/blog/2015/02/26/integrate-web-template-into-rails-4-application/">integrate web template into rails 4 application</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/02/22/digging-rails-how-rails-finds-your-templates-part-2/">Digging Rails: How Rails finds your templates Part 2</a>
       </li>
     
   </ul>
