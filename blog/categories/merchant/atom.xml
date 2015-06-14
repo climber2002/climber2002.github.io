@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: merchant | AprilTouch]]></title>
+  <link href="http://climber2002.github.io/blog/categories/merchant/atom.xml" rel="self"/>
+  <link href="http://climber2002.github.io/"/>
+  <updated>2015-06-14T22:54:50+09:30</updated>
+  <id>http://climber2002.github.io/</id>
+  <author>
+    <name><![CDATA[Andy Wang]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Calling Google Content API for shopping by using Ruby]]></title>
+    <link href="http://climber2002.github.io/blog/2015/06/14/calling-google-content-api-for-shopping-by-using-ruby/"/>
+    <updated>2015-06-14T19:53:40+09:30</updated>
+    <id>http://climber2002.github.io/blog/2015/06/14/calling-google-content-api-for-shopping-by-using-ruby</id>
+    <content type="html"><![CDATA[<p>Recently I need to call Google Content API to access Google Merchant Center by using Ruby. I googled on the internet but didn&rsquo;t find useful links, and also the google-api-client gem doesn&rsquo;t contain a lot of examples. Thanks David Tzau for his <a href="https://smallmeansbig.wordpress.com/2014/12/06/how-to-call-a-google-api-using-a-service-account-part-2-of-2/">excellent blog</a>, however he uses Python, and in this blog I will show how to call Google Content API by using Ruby.</p>
+
+<h2>Create the Client ID for a Service Account</h2>
+
+<p>In my application I will use Service Account, which means that the application doesn&rsquo;t redirect to the Google login page and asks the user to login, instead the application calls the Content API on behalf of the Service Account. This step is the same as David&rsquo;s blog, so I&rsquo;ll copy &amp; paste here shamelessly.</p>
+
+<p>So let&rsquo;s create a Service Account in Google Developer Console. Go to the <a href="https://console.developers.google.com/">Google Developer Console</a> and navigate to the “Credentials” menu under “API’s and Auth”.  From there click on “Create new Client ID”:</p>
+
+<p><img src="/images/create_service_account_1.jpg"></p>
+
+<p>Select the “Service Account” option:</p>
+
+<p><img src="/images/create_service_account_2.jpg"></p>
+
+<p>As soon as you create the Service Account, the system will generate a Client ID, email address, and a public/private key pair.  The private key is immediately downloaded to your browser.  Save this private key safely somewhere.  There is a password that comes with this private key that you will need later.  The password is “notasecret” and is the same for every private key that is generated.</p>
+
+<p><img src="/images/create_service_account_3.jpg"></p>
+
+<p>You will notice a client ID and email address are also created for the Service Account you just created.  Make note of the email address as you will need this later:</p>
+
+<p><img src="/images/create_service_account_4.jpg"></p>
+
+<h2>Granting Permissions inside Google Merchant Center for the Client ID</h2>
+
+<p>This next step is very important and is not called out very clearly in Google’s documentation and is very easy to miss.   Just because you can digitally sign JWT’s and Google’s authentication server can verify your application is calling on behalf of the Service Account, it doesn’t mean your application can access just any account’s data behind the API whether that be Google Analytics, Google Merchant Center, Adwords, etc.   In this example we are going have our program call the Content API for Shopping to retrieve a product from the corresponding Google Merchant Center account.</p>
+
+<p>Login to the corresponding Google Merchant Center Account and navigate to the “Users” menu under “Settings”.  Enter the Service Account email address here and grant it “Standard” access.</p>
+
+<p><img src="/images/create_service_account_5.jpg"></p>
+
+<h2>Add google-api-client Gem</h2>
+
+<p>To calling Google Content API, we need to add <strong>google-api-client</strong> Gem into our Gemfile.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;gem &amp;ldquo;google-api-client&amp;rdquo;&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>And then run <strong>bundle install</strong></p>
+
+<h2>Get Google::APIClient</h2>
+
+<p>To calling Google Content API, we need an <strong>Google::APIClient</strong> instance.</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;key = Google::APIClient::PKCS12.load_key(&amp;ldquo;</span><span class="si">#{</span><span class="no">Rails</span><span class="o">.</span><span class="n">root</span><span class="si">}</span><span class="sr">/</span><span class="n">config</span><span class="o">/</span><span class="n">content_api</span><span class="o">.</span><span class="n">p12</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;  &#39;notasecret&#39;)</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;asserter = Google::APIClient::JWTAsserter.new(ENV[&amp;lsquo;GOOGLE_CONTENT_API_CLIENT_ID&amp;rsquo;],</span>
+</span><span class='line'><span class="sr">  &amp;lsquo;&lt;a href=&quot;https:/</span><span class="o">/</span><span class="n">www</span><span class="o">.</span><span class="n">googleapis</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">auth</span><span class="o">/</span><span class="n">content</span><span class="s2">&quot;&gt;https://www.googleapis.com/auth/content&lt;/a&gt;&amp;rsquo;, key)&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;p&gt;client = Google::APIClient.new(</span>
+</span><span class='line'><span class="s2">  :application_name =&gt; &amp;lsquo;Your App&amp;rsquo;,</span>
+</span><span class='line'><span class="s2">  :application_version =&gt; &amp;lsquo;1.0.0&amp;rsquo;)</span>
+</span><span class='line'><span class="s2">client.authorization = asserter.authorize</span>
+</span><span class='line'><span class="s2">content = client.discovered_api(&amp;lsquo;content&amp;rsquo;, &amp;lsquo;v2&amp;rsquo;)&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s2">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>Remember the private key file we downloaded when we create the Service Account? I saved the file in #{Rails.root}/config with file name <em>content_api.p12</em> (<strong>If your repository is an open source repository, you should not put this file in your repository as it&rsquo;s very sensitive</strong>).</p>
+
+<p>On line 1, it load the key from the content_api.p12, and on line 3 it creates an asserter instance. The ENV[&lsquo;GOOGLE_CONTENT_API_CLIENT_ID&rsquo;] is the Client ID as indicated in the following snapshot. Also you should not put this information in your repository if your repository is public. For my project I put it in a yml file and when the application loads, it will set the key/value in the yml file as environment variables.</p>
+
+<p><img src="/images/client_id.png"></p>
+
+<p>On line 6 it creates a <strong>Google::APIClient</strong> instance, and on line 9 it sets the authorization.</p>
+
+<p>On line 10, it calls <em>client.discovered_api</em> to get the content api, we will use this object to dictate which api we will call when we call the api, as will show in following sections.</p>
+
+<h2>Calling Content API</h2>
+
+<h3>Request</h3>
+
+<p>To call Google Content API, normally we would call the <strong>Google::APIClient#execute</strong> method. This method accepts a Hash parameter, and the Hash normally contains the following options,</p>
+
+<h4><strong>:api_method</strong></h4>
+
+<p>The <strong>:api_method</strong> indicates which API we would like to call. Normally we set this option by calling the <em>content</em> object we got above. To know which API to call, take a look at the <a href="https://developers.google.com/shopping-content/v2">Google Content API reference</a>.</p>
+
+<p>For example, to call the <strong>Accounts: insert</strong> API, as the figure below, we should set <strong>:api_method</strong> to <strong>content.accounts.insert</strong></p>
+
+<p><img src="/images/client_api.png"></p>
+
+<h4><strong>:parameters</strong></h4>
+
+<p>The <strong>parameters</strong> should be a hash, it indicates the path parameters in the request URL, for example, the <strong>Accounts: insert</strong> API expects a <em>merchantId</em> param, so to call this API, it should set the parameters to { :merchantId => merchant_id }. Notice that the parameter key is camel case, which doesn&rsquo;t conform to Ruby convention.</p>
+
+<h4><strong>:body_object</strong></h4>
+
+<p>If the API contains a body, we should put the body in the <strong>:body_object</strong> option. The <strong>:body_object</strong> should be a Hash, what it contains depends on the specific API.</p>
+
+<p>For example, to create an Account with name &lsquo;my_account&rsquo;, we should set the :body_object as a hash like this,</p>
+
+<p>:body_object => { :name => &lsquo;my_account&rsquo; }</p>
+
+<h3>Response</h3>
+
+<p>When call the <strong>execute</strong> method, it returns us a response, we should call <strong>response.data?</strong> to check if the response contains any data. And if the API is failed, we can check response.data[&lsquo;error&rsquo;]. If the API calling is successful, we can check the documentation to see what the response data contains.For example, for Accounts Insert, if successful it will returns a <a href="https://developers.google.com/shopping-content/v2/reference/v2/accounts#resource">Accounts resource</a>, so we can call <strong>response.data[&lsquo;id&rsquo;]</strong> to get the ID of the created Account.</p>
+
+<h2>Examples</h2>
+
+<p>Now we give some examples as following. In the examples, the client is a <strong>Google::APIClient</strong> instance. Normally you should wrap this <em>client</em> instance in a class, and make the methods as instance methods of the class.</p>
+
+<h3>Create Merchant Center sub-Account</h3>
+
+<p>To create a sub-Account, and also give an email as the admin, we will call the following API,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;def create_merchant_center_account(parent_merchant_id, account_name, admin_email)</span>
+</span><span class='line'><span class="sr">  client.execute(:api_method =&gt; content.accounts.insert, :parameters =&gt; { :merchantId =&gt; parent_merchant_id },&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="ss">:body_object</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="p">{</span> <span class="ss">:name</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">account_name</span><span class="p">,</span>
+</span><span class='line'>  <span class="ss">:users</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="o">[</span> <span class="p">{</span> <span class="ss">:emailAddress</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">admin_email</span><span class="p">,</span> <span class="ss">:admin</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="kp">true</span> <span class="p">}</span><span class="o">]</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>This method will create a new sub-Account under the parent_merchant_id, and set the admin_email as the admin of the created sub-Account.</p>
+
+<h3>Delete sub-Account</h3>
+
+<p>To delete a sub-Account, call the method like following,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;def delete_merchant_center_account(parent_merchant_id, account_id)</span>
+</span><span class='line'><span class="sr">  client.execute(:api_method =&gt; content.accounts.delete, :parameters =&gt; { :merchantId =&gt; parent_merchant_id,&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="ss">accountId</span><span class="p">:</span> <span class="n">account_id</span> <span class="p">})</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>It will delete the sub-Account whose ID is account_id from the parent_merchant_id.</p>
+
+<h3>Create a feed</h3>
+
+<p>To create a feed, call the API like following,</p>
+
+<p><div class='bogus-wrapper'><notextile><figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;def create_merchant_center_feed(merchant_id, filename, url)</span>
+</span><span class='line'><span class="sr">  client.execute(:api_method =&gt; content.datafeeds.insert, :parameters =&gt; { :merchantId =&gt;   merchant_id },&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="ss">:body_object</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="p">{</span> <span class="ss">:contentLanguage</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="s1">&#39;en&#39;</span><span class="p">,</span> <span class="ss">:contentType</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="s1">&#39;products&#39;</span><span class="p">,</span> <span class="ss">:fileName</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">filename</span><span class="p">,</span>
+</span><span class='line'>  <span class="ss">:attributeLanguage</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="s1">&#39;en&#39;</span><span class="p">,</span>
+</span><span class='line'>  <span class="ss">:name</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">filename</span><span class="p">,</span> <span class="ss">:targetCountry</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="s1">&#39;AU&#39;</span><span class="p">,</span>
+</span><span class='line'>  <span class="ss">:fetchSchedule</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="p">{</span> <span class="ss">:fetchUrl</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="n">url</span><span class="p">,</span> <span class="ss">:hour</span> <span class="o">=&amp;</span><span class="n">gt</span><span class="p">;</span> <span class="mi">8</span> <span class="p">}</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;</span>
+</span></code></pre></td></tr></table></div></figure></notextile></div></p>
+
+<p>The above method will create a feed which targets Australia and the language is english. And we set the fetch schedule as 8am of the day.</p>
+]]></content>
+  </entry>
+  
+</feed>

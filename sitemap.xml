@@ -119,16 +119,22 @@
         <lastmod>2015-04-06T21:12:50+09:30</lastmod>
     </url>
     <url>
+        <loc>
+            http://climber2002.github.io/blog/2015/06/14/calling-google-content-api-for-shopping-by-using-ruby/
+        </loc>
+        <lastmod>2015-06-14T22:53:46+09:30</lastmod>
+    </url>
+    <url>
         <loc>http://climber2002.github.io/about-me/</loc>
         <lastmod>2015-02-16T20:49:25+10:30</lastmod>
     </url>
     <url>
         <loc>http://climber2002.github.io/blog/archives/</loc>
-        <lastmod>2015-04-06T21:12:50+09:30</lastmod>
+        <lastmod>2015-06-14T22:53:46+09:30</lastmod>
     </url>
     <url>
         <loc>http://climber2002.github.io/</loc>
-        <lastmod>2015-04-06T21:12:50+09:30</lastmod>
+        <lastmod>2015-06-14T22:53:46+09:30</lastmod>
     </url>
     <url>
         <loc>http://climber2002.github.io/robots.txt</loc>
