@@ -4,7 +4,7 @@
   <title><![CDATA[Category: deploy | AprilTouch]]></title>
   <link href="http://climber2002.github.io/blog/categories/deploy/atom.xml" rel="self"/>
   <link href="http://climber2002.github.io/"/>
-  <updated>2015-06-14T22:54:50+09:30</updated>
+  <updated>2015-09-13T08:49:08+09:30</updated>
   <id>http://climber2002.github.io/</id>
   <author>
     <name><![CDATA[Andy Wang]]></name>
@@ -479,7 +479,7 @@
 </span><span class='line'>&lt;p&gt;deploy@vagrant-ubuntu-trusty-64:/home/vagrant<span class="nv">$ </span><span class="nb">cd</span> ~
 </span><span class='line'>deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>mkdir .ssh
 </span><span class='line'>deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span><span class="nb">cd</span> .ssh
-</span><span class='line'>deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>ssh-keygen -t rsa -b 4096 -C &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;&amp;#x6d;&amp;#97;&amp;#x69;&amp;#x6c;&amp;#x74;&amp;#x6f;&amp;#58;&amp;#x63;&amp;#x6c;&amp;#x69;&amp;#x6d;&amp;#98;&amp;#x65;&amp;#114;&amp;#50;&amp;#x30;&amp;#x30;&amp;#x32;&amp;#x40;&amp;#103;&amp;#x6d;&amp;#97;&amp;#105;&amp;#x6c;&amp;#x2e;&amp;#x63;&amp;#x6f;&amp;#109;&quot;</span>&gt;&amp;#x63;&amp;#108;&amp;#105;&amp;#109;&amp;#x62;&amp;#x65;&amp;#114;&amp;#50;&amp;#48;&amp;#48;&amp;#x32;&amp;#x40;&amp;#x67;&amp;#109;&amp;#97;&amp;#105;&amp;#108;&amp;#46;&amp;#x63;&amp;#x6f;&amp;#109;&lt;/a&gt;&lt;/p&gt;
+</span><span class='line'>deploy@vagrant-ubuntu-trusty-64:~<span class="nv">$ </span>ssh-keygen -t rsa -b 4096 -C &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;&amp;#109;&amp;#x61;&amp;#x69;&amp;#108;&amp;#116;&amp;#111;&amp;#x3a;&amp;#x63;&amp;#108;&amp;#105;&amp;#x6d;&amp;#x62;&amp;#101;&amp;#114;&amp;#x32;&amp;#x30;&amp;#x30;&amp;#50;&amp;#64;&amp;#103;&amp;#109;&amp;#97;&amp;#105;&amp;#x6c;&amp;#x2e;&amp;#99;&amp;#x6f;&amp;#x6d;&quot;</span>&gt;&amp;#99;&amp;#x6c;&amp;#105;&amp;#x6d;&amp;#98;&amp;#x65;&amp;#x72;&amp;#50;&amp;#48;&amp;#48;&amp;#50;&amp;#64;&amp;#x67;&amp;#x6d;&amp;#x61;&amp;#x69;&amp;#x6c;&amp;#x2e;&amp;#99;&amp;#x6f;&amp;#x6d;&lt;/a&gt;&lt;/p&gt;
 </span><span class='line'>
 </span><span class='line'>&lt;p&gt;
 </span></code></pre></td></tr></table></div></figure></notextile></div></p>
@@ -554,7 +554,7 @@
 <span class='line-number'>30</span>
 <span class='line-number'>31</span>
 <span class='line-number'>32</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>host<span class="nv">$ </span>ssh &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;&amp;#109;&amp;#x61;&amp;#x69;&amp;#x6c;&amp;#x74;&amp;#111;&amp;#58;&amp;#x64;&amp;#x65;&amp;#112;&amp;#108;&amp;#111;&amp;#121;&amp;#64;&amp;#x31;&amp;#x39;&amp;#50;&amp;#x2e;&amp;#49;&amp;#54;&amp;#x38;&amp;#x2e;&amp;#x32;&amp;#x32;&amp;#x2e;&amp;#49;&amp;#48;&quot;</span>&gt;&amp;#100;&amp;#x65;&amp;#x70;&amp;#108;&amp;#111;&amp;#x79;&amp;#x40;&amp;#x31;&amp;#57;&amp;#50;&amp;#x2e;&amp;#x31;&amp;#x36;&amp;#56;&amp;#x2e;&amp;#x32;&amp;#50;&amp;#46;&amp;#49;&amp;#48;&lt;/a&gt;&lt;/p&gt;
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>host<span class="nv">$ </span>ssh &lt;a <span class="nv">href</span><span class="o">=</span><span class="s2">&quot;&amp;#109;&amp;#x61;&amp;#x69;&amp;#x6c;&amp;#116;&amp;#x6f;&amp;#58;&amp;#100;&amp;#101;&amp;#x70;&amp;#x6c;&amp;#x6f;&amp;#x79;&amp;#64;&amp;#49;&amp;#57;&amp;#x32;&amp;#46;&amp;#49;&amp;#54;&amp;#56;&amp;#46;&amp;#x32;&amp;#x32;&amp;#46;&amp;#49;&amp;#x30;&quot;</span>&gt;&amp;#x64;&amp;#101;&amp;#112;&amp;#108;&amp;#111;&amp;#x79;&amp;#x40;&amp;#x31;&amp;#x39;&amp;#50;&amp;#x2e;&amp;#49;&amp;#x36;&amp;#56;&amp;#x2e;&amp;#50;&amp;#x32;&amp;#x2e;&amp;#49;&amp;#48;&lt;/a&gt;&lt;/p&gt;
 </span><span class='line'>
 </span><span class='line'>&lt;p&gt;The authenticity of host &amp;lsquo;192.168.22.10 <span class="o">(</span>192.168.22.10<span class="o">)</span>&amp;rsquo; can&amp;rsquo;t be established.
 </span><span class='line'>RSA key fingerprint is b1:e4:e0:42:a1:37:0b:04:d3:88:8c:42:15:aa:00:b4.
