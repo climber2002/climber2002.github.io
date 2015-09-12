@@ -244,3 +244,5 @@ end
 Devise will define a scope **:user** in Warden, and it will add the :database_authenticatable in the default_strategies list. Since we want to use :database_authenticatable_for_merchant_owner strategy, we delete :database_authenticatable and push :database_authenticatable_for_merchant_owner
 
 After this, our application will use :database_authenticatable_for_merchant_owner and support Multitenancy authentication. 
+
+If you want to learn more about Rails and Devise, [this page at udemy](https://blog.udemy.com/ruby-on-rails-tutorial-learn-from-scratch/) provides a good list of some Rails tutorials and can be used as a reference guide.
